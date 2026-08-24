@@ -1,37 +1,48 @@
 import { Mastra } from '@mastra/core/mastra';
 import { LibSQLStore } from '@mastra/libsql';
-import { DuckDBStore } from '@mastra/duckdb';
-import { MastraCompositeStore } from '@mastra/core/storage';
+import { PinoLogger } from '@mastra/loggers';
 import {
-  MastraStorageExporter,
   MastraPlatformExporter,
+  MastraStorageExporter,
   Observability,
   SensitiveDataFilter,
 } from '@mastra/observability';
-import { agent } from './agents/agent';
-import { startScheduleTool, stopScheduleTool } from './tools/schedule-tools';
+import { triageAgent } from './agents/triage-agent';
+import { responseAgent } from './agents/response-agent';
+import { supportSupervisorAgent } from './agents/support-supervisor';
+import { ingestSupportCaseWorkflow } from './workflows/ingest-support-case';
+import { resolveSupportCaseWorkflow } from './workflows/resolve-support-case';
+import { indexSupportKnowledgeWorkflow } from './workflows/index-support-knowledge';
+import { vectorStore } from './lib/vector-store';
+import { supportRoutes } from './server/routes';
 
 export const mastra = new Mastra({
-  bundler: {
-    externals: ['@duckdb/node-bindings'],
+  agents: {
+    triageAgent,
+    responseAgent,
+    supportSupervisorAgent,
   },
-  agents: { agent },
-  tools: { startScheduleTool, stopScheduleTool },
-  storage: new MastraCompositeStore({
-    id: 'composite-storage',
-    default: new LibSQLStore({
-      id: 'mastra-storage',
-      url: process.env.TURSO_DATABASE_URL || 'file:./mastra.db',
-      authToken: process.env.TURSO_AUTH_TOKEN || undefined,
-    }),
-    domains: {
-      observability: await new DuckDBStore().getStore('observability'),
-    },
+  workflows: {
+    ingestSupportCaseWorkflow,
+    resolveSupportCaseWorkflow,
+    indexSupportKnowledgeWorkflow,
+  },
+  vectors: {
+    supportKnowledge: vectorStore,
+  },
+  storage: new LibSQLStore({
+    id: 'mastra-storage',
+    url: process.env.TURSO_DATABASE_URL || 'file:./mastra.db',
+    authToken: process.env.TURSO_AUTH_TOKEN || undefined,
   }),
+  server: {
+    apiRoutes: supportRoutes,
+  },
+  logger: new PinoLogger({ name: 'support-refund-agent', level: 'info' }),
   observability: new Observability({
     configs: {
       default: {
-        serviceName: 'mastra',
+        serviceName: 'support-refund-agent',
         exporters: [new MastraStorageExporter(), new MastraPlatformExporter()],
         spanOutputProcessors: [new SensitiveDataFilter()],
       },
