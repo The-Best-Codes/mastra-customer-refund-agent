@@ -1,8 +1,16 @@
 # Customer Support Resolution & Refund Agent
 
-A [Mastra](https://mastra.ai) template for a customer support agent that resolves real support cases — but keeps every transactional action (refunds, credits) under human control.
+A [Mastra](https://mastra.ai) template for a customer support agent that resolves real support cases — but keeps every transactional action (refunds, credits) under human control. Built with [Mastra](https://mastra.ai).
 
 **Flow:** ingest a message → classify intent/urgency → retrieve grounding policy → inspect the order/subscription → draft a grounded response → request human approval for any refund → execute or escalate.
+
+## Why we built this
+
+Support automation is one of the most requested agent use cases, and also one of the easiest to get wrong: the moment an agent can autonomously issue a refund, a hallucinated policy claim or a misread order stops being an annoyance and starts being money out the door. Most "AI support agent" demos either stay safely read-only (answer questions, no actions) or quietly skip the hard part (assume the refund tool is safe to call).
+
+This template shows the middle path: let the agent do the actual work — classify, retrieve policy, look up the order, draft a response, decide whether a refund is warranted — but put a real approval boundary in front of the one action that moves money, using Mastra's workflow `suspend()`/`resume()` rather than a prompt instruction telling the model to "ask first." It also extends the patterns from Mastra's knowledge-base templates (`template-company-knowledge`, `template-chat-with-pdf`) and channel templates (`template-slack-agent`) into a complete case-resolution system: ingestion, RAG grounding, multi-agent triage/drafting, and a human-in-the-loop transactional step, end to end.
+
+## Features
 
 - **`triageAgent` / `responseAgent` / `supportSupervisorAgent`** — a supervisor with two specialist agents (structured-output classification, and grounded drafting + refund recommendation).
 - **`resolveSupportCaseWorkflow`** — the resolution pipeline. It suspends with `suspend()` at the approval step and only resumes once a human approves or rejects the recommended refund.
@@ -109,6 +117,6 @@ Everything downstream of ingestion only ever sees a normalized `SupportCase` (`s
 
 ## About Mastra templates
 
-[Mastra templates](https://mastra.ai/templates) are ready-to-use projects that show what you can build. Use this repository as your starting point, then customize it for your app.
+[Mastra templates](https://mastra.ai/templates) are ready-to-use projects that show off what you can build — clone one, poke around, and make it yours. They live in the [Mastra monorepo](https://github.com/mastra-ai/mastra) and are automatically synced to standalone repositories for easier cloning.
 
 Want to contribute? See the [Mastra contributing guide](https://github.com/mastra-ai/mastra/blob/main/CONTRIBUTING.md).
