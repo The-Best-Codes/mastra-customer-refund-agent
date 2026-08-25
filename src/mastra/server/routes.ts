@@ -49,9 +49,16 @@ export const supportMockEmailsRoute = registerApiRoute('/support/mock-emails', {
   handler: async c => c.json({ emails: MOCK_INBOUND_EMAILS }),
 });
 
+/** GET /support/cases - case inbox for the demo UI, newest first. Optionally filtered by `?email=` for the customer portal. */
 export const supportCasesListRoute = registerApiRoute('/support/cases', {
   method: 'GET',
-  handler: async c => c.json({ cases: caseStore.list() }),
+  handler: async c => {
+    const email = c.req.query('email');
+    const cases = email
+      ? caseStore.list().filter(supportCase => supportCase.customer.email.toLowerCase() === email.toLowerCase())
+      : caseStore.list();
+    return c.json({ cases });
+  },
 });
 
 export const supportCaseDetailRoute = registerApiRoute('/support/cases/:caseId', {

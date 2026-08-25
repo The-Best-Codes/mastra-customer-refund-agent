@@ -1,4 +1,9 @@
-# General Refund Policy
+import type { PolicyDocument } from '../types';
+
+export const refundPolicy: PolicyDocument = {
+  title: 'General Refund Policy',
+  source: 'refund-policy',
+  text: `# General Refund Policy
 
 We want customers to feel confident buying from us. Refunds are approved case-by-case, but the following guidelines apply:
 
@@ -7,4 +12,5 @@ We want customers to feel confident buying from us. Refunds are approved case-by
 - A refund can never exceed the amount originally charged for the order.
 - Partial refunds (e.g. goodwill credits) are allowed when a full refund isn't warranted but the customer experienced a real inconvenience.
 - All refunds over $1,000 require escalation to a senior support lead - do not approve these directly, no matter how clear-cut the case seems.
-- Every refund must reference a specific order ID and reason. Never issue a refund "just to close the ticket."
+- Every refund must reference a specific order ID and reason. Never issue a refund "just to close the ticket."`,
+};
