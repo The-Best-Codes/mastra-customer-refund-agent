@@ -1,6 +1,7 @@
 import { Agent } from '@mastra/core/agent';
 import { Memory } from '@mastra/memory';
 import { draftResolutionSchema } from '../domain/support-case';
+import { responseAgentScorers } from '../evals';
 import { lookupCustomerRefundHistoryTool, lookupOrderTool, lookupSubscriptionTool } from '../tools/lookup-order';
 import { searchSupportKnowledgeTool } from '../tools/search-support-knowledge';
 
@@ -34,6 +35,7 @@ Set \`requiresEscalation: true\` and explain why in \`escalationReason\` when: t
 
 Be warm, specific, and concise. Acknowledge the customer's frustration when present. Reference their actual order/product by name. Never sound like a form letter.`,
   model: 'openai/gpt-5.6-luna',
+  scorers: responseAgentScorers,
   tools: {
     search_support_knowledge: searchSupportKnowledgeTool,
     lookup_order: lookupOrderTool,

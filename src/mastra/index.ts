@@ -13,6 +13,7 @@ import { supportSupervisorAgent } from './agents/support-supervisor';
 import { ingestSupportCaseWorkflow } from './workflows/ingest-support-case';
 import { resolveSupportCaseWorkflow } from './workflows/resolve-support-case';
 import { indexSupportKnowledgeWorkflow } from './workflows/index-support-knowledge';
+import { supportEvalScorerRegistry } from './evals';
 import { vectorStore } from './lib/vector-store';
 import { supportRoutes } from './server/routes';
 
@@ -27,6 +28,7 @@ export const mastra = new Mastra({
     resolveSupportCaseWorkflow,
     indexSupportKnowledgeWorkflow,
   },
+  scorers: supportEvalScorerRegistry,
   vectors: {
     supportKnowledge: vectorStore,
   },

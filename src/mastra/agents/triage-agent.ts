@@ -1,6 +1,7 @@
 import { Agent } from '@mastra/core/agent';
 import { Memory } from '@mastra/memory';
 import { triageResultSchema } from '../domain/support-case';
+import { triageAgentScorers } from '../evals';
 
 export { triageResultSchema };
 
@@ -22,6 +23,7 @@ Given a customer's subject and message body, decide:
 
 Never invent details that aren't in the message. If the message is empty or nonsensical, classify intent as 'other' with low confidence and requiresHumanReview true.`,
   model: 'openai/gpt-5.6-luna',
+  scorers: triageAgentScorers,
   memory: new Memory({
     options: {
       lastMessages: 20,
