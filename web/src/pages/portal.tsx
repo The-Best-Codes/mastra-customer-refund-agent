@@ -1,21 +1,24 @@
 import { useCallback, useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from '@/components/ui/empty';
+import { Field, FieldDescription, FieldGroup, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
 import { StatusBadge } from '@/components/status-badge';
 import { isCaseActive, listCases, listMockEmails, submitCase } from '@/lib/api';
 import type { MockEmailPayload, SupportCase } from '@/lib/types';
-import { Loader2, Mail, Send } from 'lucide-react';
+import { ArrowRight, Loader2, Send } from 'lucide-react';
 
 const STORAGE_KEY = 'support-demo:customer-email';
 
 function CaseCard({ supportCase }: { supportCase: SupportCase }) {
   const lastAgentMessage = [...supportCase.messages].reverse().find(m => m.author === 'agent');
+
   return (
     <Card>
       <CardHeader>
@@ -29,7 +32,7 @@ function CaseCard({ supportCase }: { supportCase: SupportCase }) {
           <StatusBadge status={supportCase.status} />
         </div>
       </CardHeader>
-      <CardContent className="space-y-3 text-sm">
+      <CardContent className="flex flex-col gap-3 text-sm">
         {supportCase.messages.map(message => (
           <div key={message.id} className={message.author === 'customer' ? 'text-foreground' : 'text-muted-foreground'}>
             <span className="font-medium">{message.author === 'customer' ? 'You' : 'Support'}: </span>
@@ -37,17 +40,13 @@ function CaseCard({ supportCase }: { supportCase: SupportCase }) {
           </div>
         ))}
         {isCaseActive(supportCase.status) && !lastAgentMessage && (
-          <div className="flex items-center gap-2 text-muted-foreground">
-            <Loader2 className="size-3.5 animate-spin" /> Our AI agent is looking into this...
-          </div>
+          <p className="text-muted-foreground">The case is still being processed.</p>
         )}
         {supportCase.status === 'waiting_approval' && (
-          <p className="rounded-md bg-purple-50 px-3 py-2 text-purple-800 dark:bg-purple-950 dark:text-purple-300">
-            A refund has been recommended and is waiting on a support lead's approval.
-          </p>
+          <p className="text-muted-foreground">A refund was recommended and is waiting for approval.</p>
         )}
         {supportCase.refundResult?.status === 'executed' && (
-          <p className="rounded-md bg-emerald-50 px-3 py-2 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">
+          <p className="text-muted-foreground">
             Refund of {supportCase.refundResult.amount} {supportCase.refundResult.currency} issued.
           </p>
         )}
@@ -133,7 +132,7 @@ export function Portal() {
   async function sendMockEmail(mock: MockEmailPayload) {
     setSubmitting(true);
     try {
-      const result = await submitCase({ ...mock, externalId: `${mock.externalId}-${Date.now()}` });
+      const result = await submitCase({ ...mock, externalId: `${mock.externalId}-${crypto.randomUUID()}` });
       localStorage.setItem(STORAGE_KEY, mock.from);
       setEmail(mock.from);
       setLookupEmail(mock.from);
@@ -147,99 +146,137 @@ export function Portal() {
   }
 
   return (
-    <div className="grid gap-8 lg:grid-cols-[1fr_1.1fr]">
-      <div className="space-y-6">
-        <Card>
-          <CardHeader>
-            <CardTitle>Contact support</CardTitle>
-            <CardDescription>Send a message the way a real customer would — this becomes a support case.</CardDescription>
-          </CardHeader>
-          <form onSubmit={handleSubmit}>
-            <CardContent className="space-y-4">
-              <div className="grid gap-2 sm:grid-cols-2">
-                <div className="space-y-1.5">
-                  <Label htmlFor="name">Your name</Label>
-                  <Input id="name" value={name} onChange={e => setName(e.target.value)} placeholder="Alex Kim" />
+    <div className="flex flex-col gap-8">
+      <section className="flex flex-wrap items-start justify-between gap-4">
+        <div className="flex flex-col gap-2">
+          <h1 className="text-3xl font-semibold tracking-tight">Customer portal</h1>
+          <p className="max-w-2xl text-muted-foreground">
+            Send a support request and track cases by email.
+          </p>
+        </div>
+        <Button variant="outline" render={<Link to="/admin" />}>
+          Open support admin
+          <ArrowRight data-icon="inline-end" />
+        </Button>
+      </section>
+
+      <div className="grid gap-8 lg:grid-cols-[1fr_1.1fr]">
+        <div className="flex flex-col gap-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Contact support</CardTitle>
+              <CardDescription>Send a message to create a case.</CardDescription>
+            </CardHeader>
+            <form onSubmit={handleSubmit}>
+              <CardContent>
+                <FieldGroup>
+                  <FieldGroup className="grid gap-4 sm:grid-cols-2">
+                    <Field>
+                      <FieldLabel htmlFor="name">Your name</FieldLabel>
+                      <Input id="name" value={name} onChange={e => setName(e.target.value)} placeholder="Alex Kim" />
+                    </Field>
+                    <Field>
+                      <FieldLabel htmlFor="email">Email</FieldLabel>
+                      <Input
+                        id="email"
+                        type="email"
+                        required
+                        value={email}
+                        onChange={e => setEmail(e.target.value)}
+                        placeholder="alex@example.com"
+                      />
+                      <FieldDescription>We use this to find your cases after you submit.</FieldDescription>
+                    </Field>
+                  </FieldGroup>
+                  <Field>
+                    <FieldLabel htmlFor="subject">Subject</FieldLabel>
+                    <Input id="subject" required value={subject} onChange={e => setSubject(e.target.value)} placeholder="I was charged twice" />
+                  </Field>
+                  <Field>
+                    <FieldLabel htmlFor="body">Message</FieldLabel>
+                    <Textarea id="body" required rows={5} value={body} onChange={e => setBody(e.target.value)} placeholder="Tell us what happened" />
+                  </Field>
+                </FieldGroup>
+              </CardContent>
+              <CardFooter>
+                <Button type="submit" disabled={submitting}>
+                  {submitting ? <Loader2 className="animate-spin" data-icon="inline-start" /> : <Send data-icon="inline-start" />}
+                  Send message
+                </Button>
+              </CardFooter>
+            </form>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Or try a sample email</CardTitle>
+              <CardDescription>Use a prepared example instead.</CardDescription>
+            </CardHeader>
+            <CardContent className="flex flex-col gap-4">
+              {mockEmails.map(mock => (
+                <div key={mock.externalId} className="flex flex-col gap-3 rounded-lg border p-4 text-sm sm:flex-row sm:items-center sm:justify-between">
+                  <div>
+                    <p className="font-medium">{mock.subject}</p>
+                    <p className="text-muted-foreground">{mock.fromName ?? mock.from}</p>
+                  </div>
+                  <Button size="sm" variant="outline" disabled={submitting} onClick={() => sendMockEmail(mock)}>
+                    Send
+                  </Button>
                 </div>
-                <div className="space-y-1.5">
-                  <Label htmlFor="email">Email</Label>
+              ))}
+            </CardContent>
+          </Card>
+        </div>
+
+        <div className="flex flex-col gap-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Your cases</CardTitle>
+              <CardDescription>Enter an email address to look up submitted cases.</CardDescription>
+            </CardHeader>
+            <CardContent className="flex flex-col gap-4">
+              <FieldGroup>
+                <Field>
+                  <FieldLabel htmlFor="lookup">Case lookup email</FieldLabel>
                   <Input
-                    id="email"
+                    id="lookup"
                     type="email"
-                    required
-                    value={email}
-                    onChange={e => setEmail(e.target.value)}
+                    value={lookupEmail}
+                    onChange={e => setLookupEmail(e.target.value)}
                     placeholder="alex@example.com"
                   />
+                </Field>
+              </FieldGroup>
+              <Separator />
+              {loadingCases && cases.length === 0 && (
+                <div className="flex flex-col gap-3">
+                  <Skeleton className="h-24 w-full" />
+                  <Skeleton className="h-24 w-full" />
                 </div>
-              </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="subject">Subject</Label>
-                <Input id="subject" required value={subject} onChange={e => setSubject(e.target.value)} placeholder="I was charged twice" />
-              </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="body">Message</Label>
-                <Textarea id="body" required rows={5} value={body} onChange={e => setBody(e.target.value)} placeholder="Tell us what happened..." />
+              )}
+              {!loadingCases && !lookupEmail && (
+                <Empty className="border">
+                  <EmptyHeader>
+                    <EmptyTitle>Look up your support history</EmptyTitle>
+                    <EmptyDescription>Enter the same email you used for your support request to load your cases.</EmptyDescription>
+                  </EmptyHeader>
+                </Empty>
+              )}
+              {!loadingCases && lookupEmail && cases.length === 0 && (
+                <Empty className="border">
+                  <EmptyHeader>
+                    <EmptyTitle>No cases found</EmptyTitle>
+                    <EmptyDescription>No cases were found for {lookupEmail} yet.</EmptyDescription>
+                  </EmptyHeader>
+                </Empty>
+              )}
+              <div className="flex flex-col gap-3">
+                {cases.map(c => (
+                  <CaseCard key={c.id} supportCase={c} />
+                ))}
               </div>
             </CardContent>
-            <CardFooter>
-              <Button type="submit" disabled={submitting} className="gap-2">
-                {submitting ? <Loader2 className="size-4 animate-spin" /> : <Send className="size-4" />}
-                Send message
-              </Button>
-            </CardFooter>
-          </form>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Or try a canned example</CardTitle>
-            <CardDescription>One click sends it as that customer, so you can see how different cases resolve.</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-2">
-            {mockEmails.map(mock => (
-              <div key={mock.externalId} className="flex items-center justify-between gap-3 rounded-md border p-3 text-sm">
-                <div>
-                  <p className="font-medium">{mock.subject}</p>
-                  <p className="text-muted-foreground">{mock.fromName ?? mock.from}</p>
-                </div>
-                <Button size="sm" variant="outline" disabled={submitting} onClick={() => sendMockEmail(mock)}>
-                  Send
-                </Button>
-              </div>
-            ))}
-          </CardContent>
-        </Card>
-      </div>
-
-      <div className="space-y-4">
-        <div className="flex items-end gap-2">
-          <div className="flex-1 space-y-1.5">
-            <Label htmlFor="lookup">Your cases</Label>
-            <Input
-              id="lookup"
-              type="email"
-              value={lookupEmail}
-              onChange={e => setLookupEmail(e.target.value)}
-              placeholder="Enter your email to see your cases"
-            />
-          </div>
-          <Mail className="mb-2 size-4 text-muted-foreground" />
-        </div>
-        <Separator />
-        {loadingCases && cases.length === 0 && (
-          <div className="space-y-3">
-            <Skeleton className="h-24 w-full" />
-            <Skeleton className="h-24 w-full" />
-          </div>
-        )}
-        {!loadingCases && lookupEmail && cases.length === 0 && (
-          <p className="text-sm text-muted-foreground">No cases found for {lookupEmail} yet.</p>
-        )}
-        <div className="space-y-3">
-          {cases.map(c => (
-            <CaseCard key={c.id} supportCase={c} />
-          ))}
+          </Card>
         </div>
       </div>
     </div>

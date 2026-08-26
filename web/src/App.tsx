@@ -6,9 +6,9 @@ import { Admin } from '@/pages/admin';
 
 function App() {
   return (
-    <div className="min-h-svh bg-muted/30">
+    <div className="min-h-svh bg-background">
       <NavBar />
-      <main className="mx-auto max-w-6xl px-6 py-8">
+      <main className="mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-8">
         <Routes>
           <Route path="/" element={<Landing />} />
           <Route path="/portal" element={<Portal />} />

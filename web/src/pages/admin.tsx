@@ -1,17 +1,22 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { useNavigate, useParams } from 'react-router-dom';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Empty, EmptyHeader, EmptyTitle, EmptyDescription } from '@/components/ui/empty';
+import { Field, FieldDescription, FieldGroup, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Separator } from '@/components/ui/separator';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { CaseListItem } from '@/components/admin/case-list-item';
 import { CaseDetail } from '@/components/admin/case-detail';
+import { StatusBadge } from '@/components/status-badge';
 import { approveCase, listCases, listMockEmails, rejectCase, reindexKnowledge, submitCase } from '@/lib/api';
 import type { MockEmailPayload, SupportCase } from '@/lib/types';
-import { Inbox, Loader2, RefreshCcw, Send } from 'lucide-react';
+import { ArrowRight, Loader2, RefreshCcw, Send } from 'lucide-react';
 
 const APPROVER_STORAGE_KEY = 'support-demo:approver-id';
 
@@ -84,7 +89,7 @@ export function Admin() {
     if (!mock) return;
     setSending(true);
     try {
-      const result = await submitCase({ ...mock, externalId: `${mock.externalId}-${Date.now()}` });
+      const result = await submitCase({ ...mock, externalId: `${mock.externalId}-${crypto.randomUUID()}` });
       toast.success(`Case ${result.caseId} created`);
       await refresh();
       navigate(`/admin/${result.caseId}`);
@@ -114,93 +119,158 @@ export function Admin() {
         ? await approveCase(selectedCase.id, approverId, note)
         : await rejectCase(selectedCase.id, approverId, note);
       setCases(prev => prev.map(c => (c.id === updated.id ? updated : c)));
-      toast.success(approved ? 'Refund approved' : 'Refund rejected — case escalated');
+      toast.success(approved ? 'Refund approved' : 'Refund rejected and case escalated');
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Failed to submit decision');
     }
   }
 
   return (
-    <div className="space-y-4">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="text-xl font-semibold">Support admin</h1>
-          <p className="text-sm text-muted-foreground">Review AI-drafted resolutions and approve or reject refunds.</p>
+    <div className="flex flex-col gap-6">
+      <section className="flex flex-wrap items-start justify-between gap-4">
+        <div className="flex flex-col gap-2">
+          <h1 className="text-3xl font-semibold tracking-tight">Support admin</h1>
+          <p className="max-w-2xl text-muted-foreground">
+            Review cases, inspect the workflow output, and approve or reject refunds.
+          </p>
         </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <div className="flex items-center gap-1.5">
-            <Label htmlFor="approver" className="text-xs text-muted-foreground">
-              Acting as
-            </Label>
-            <Input
-              id="approver"
-              className="h-8 w-40"
-              value={approverId}
-              onChange={e => setApproverId(e.target.value)}
-            />
-          </div>
-          <Button variant="outline" size="sm" onClick={handleReindex} disabled={reindexing} className="gap-1.5">
-            {reindexing ? <Loader2 className="size-3.5 animate-spin" /> : <RefreshCcw className="size-3.5" />}
-            Reindex knowledge
-          </Button>
-        </div>
-      </div>
-
-      <div className="flex flex-wrap items-center gap-2 rounded-md border bg-background p-2">
-        <Inbox className="size-4 text-muted-foreground" />
-        <span className="text-sm text-muted-foreground">Simulate an inbound email:</span>
-        <Select value={selectedMock} onValueChange={value => setSelectedMock(value ?? '')}>
-          <SelectTrigger className="h-8 w-64">
-            <SelectValue placeholder="Choose an example" />
-          </SelectTrigger>
-          <SelectContent>
-            {mockEmails.map(mock => (
-              <SelectItem key={mock.externalId} value={mock.externalId}>
-                {mock.subject}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        <Button size="sm" onClick={handleSimulate} disabled={sending || !selectedMock} className="gap-1.5">
-          {sending ? <Loader2 className="size-3.5 animate-spin" /> : <Send className="size-3.5" />}
-          Send
+        <Button variant="outline" render={<Link to="/portal" />}>
+          Open customer portal
+          <ArrowRight data-icon="inline-end" />
         </Button>
-      </div>
+      </section>
 
-      <div className="grid gap-4 lg:grid-cols-[340px_1fr]">
-        <div className="space-y-3">
-          <Tabs value={filter} onValueChange={v => setFilter(v as typeof filter)}>
-            <TabsList className="flex-wrap h-auto">
-              {FILTERS.map(f => (
-                <TabsTrigger key={f.value} value={f.value} className="text-xs">
-                  {f.label}
-                </TabsTrigger>
-              ))}
-            </TabsList>
-          </Tabs>
-          <ScrollArea className="h-[70vh] rounded-md border bg-background p-2">
-            <div className="space-y-2">
-              {loading && <p className="p-2 text-sm text-muted-foreground">Loading cases...</p>}
-              {!loading && filteredCases.length === 0 && (
-                <p className="p-2 text-sm text-muted-foreground">No cases in this view yet.</p>
+      <section className="grid gap-6 xl:grid-cols-[320px_1fr]">
+        <Card>
+          <CardHeader>
+            <CardTitle>Admin controls</CardTitle>
+            <CardDescription>Choose the approver or create a sample case.</CardDescription>
+          </CardHeader>
+          <CardContent className="flex flex-col gap-5">
+            <FieldGroup>
+              <Field>
+                <FieldLabel htmlFor="approver">Acting approver</FieldLabel>
+                <Input id="approver" value={approverId} onChange={e => setApproverId(e.target.value)} />
+                <FieldDescription>This identifier is saved with approval and rejection decisions.</FieldDescription>
+              </Field>
+              <Field>
+                <FieldLabel htmlFor="mock-case">Sample inbound email</FieldLabel>
+                <Select value={selectedMock} onValueChange={value => setSelectedMock(value ?? '')}>
+                  <SelectTrigger id="mock-case" className="w-full">
+                    <SelectValue placeholder="Choose an example" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectGroup>
+                      {mockEmails.map(mock => (
+                        <SelectItem key={mock.externalId} value={mock.externalId}>
+                          {mock.subject}
+                        </SelectItem>
+                      ))}
+                    </SelectGroup>
+                  </SelectContent>
+                </Select>
+                <FieldDescription>Create a fresh case from one of the canned support emails.</FieldDescription>
+              </Field>
+            </FieldGroup>
+            <Separator />
+            <div className="flex flex-col gap-3 sm:flex-row xl:flex-col">
+              <Button onClick={handleSimulate} disabled={sending || !selectedMock}>
+                {sending ? <Loader2 className="animate-spin" data-icon="inline-start" /> : <Send data-icon="inline-start" />}
+                Create sample case
+              </Button>
+              <Button variant="outline" onClick={handleReindex} disabled={reindexing}>
+                {reindexing ? <Loader2 className="animate-spin" data-icon="inline-start" /> : <RefreshCcw data-icon="inline-start" />}
+                Reindex knowledge
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        <div className="flex flex-col gap-6">
+          <Card>
+            <CardHeader className="flex flex-col gap-4">
+              <div className="flex flex-col gap-1">
+                <CardTitle>Case queue</CardTitle>
+                <CardDescription>Filter the list and open a case.</CardDescription>
+              </div>
+              <Tabs value={filter} onValueChange={v => setFilter(v as typeof filter)}>
+                <TabsList className="h-auto flex-wrap">
+                  {FILTERS.map(f => (
+                    <TabsTrigger key={f.value} value={f.value} className="text-xs">
+                      {f.label}
+                    </TabsTrigger>
+                  ))}
+                </TabsList>
+              </Tabs>
+            </CardHeader>
+            <CardContent>
+              {loading && (
+                <div className="flex flex-col gap-3">
+                  <Skeleton className="h-12 w-full" />
+                  <Skeleton className="h-12 w-full" />
+                  <Skeleton className="h-12 w-full" />
+                </div>
               )}
-              {filteredCases.map(c => (
-                <CaseListItem key={c.id} supportCase={c} selected={c.id === caseId} onSelect={() => navigate(`/admin/${c.id}`)} />
-              ))}
-            </div>
-          </ScrollArea>
-        </div>
+              {!loading && filteredCases.length === 0 && (
+                <Empty className="border">
+                  <EmptyHeader>
+                    <EmptyTitle>No cases in this view</EmptyTitle>
+                    <EmptyDescription>Try another filter or create a sample case to populate the queue.</EmptyDescription>
+                  </EmptyHeader>
+                </Empty>
+              )}
+              {!loading && filteredCases.length > 0 && (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Case</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Customer</TableHead>
+                      <TableHead>Updated</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredCases.map(c => (
+                      <TableRow key={c.id} data-state={c.id === caseId ? 'selected' : undefined}>
+                        <TableCell>
+                          <button type="button" className="flex flex-col text-left" onClick={() => navigate(`/admin/${c.id}`)}>
+                            <span className="font-medium">{c.subject}</span>
+                            <span className="text-xs text-muted-foreground">{c.id}</span>
+                          </button>
+                        </TableCell>
+                        <TableCell>
+                          <StatusBadge status={c.status} />
+                        </TableCell>
+                        <TableCell>{c.customer.name ?? c.customer.email}</TableCell>
+                        <TableCell>{new Date(c.updatedAt).toLocaleString()}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
+            </CardContent>
+          </Card>
 
-        <div className="rounded-md border bg-background p-5">
-          {selectedCase ? (
-            <CaseDetail supportCase={selectedCase} approverId={approverId} onDecision={handleDecision} />
-          ) : (
-            <div className="flex h-full min-h-[50vh] items-center justify-center text-sm text-muted-foreground">
-              Select a case from the list to see what the AI found and did.
-            </div>
-          )}
+          <Card>
+            <CardHeader>
+              <CardTitle>Case detail</CardTitle>
+              <CardDescription>Review the selected case.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {selectedCase ? (
+                <CaseDetail supportCase={selectedCase} approverId={approverId} onDecision={handleDecision} />
+              ) : (
+                <Empty className="border">
+                  <EmptyHeader>
+                    <EmptyTitle>Select a case</EmptyTitle>
+                    <EmptyDescription>Choose a case from the queue to see the conversation, draft, and approval controls.</EmptyDescription>
+                  </EmptyHeader>
+                </Empty>
+              )}
+            </CardContent>
+          </Card>
         </div>
-      </div>
+      </section>
     </div>
   );
 }

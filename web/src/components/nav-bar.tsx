@@ -1,4 +1,5 @@
 import { NavLink } from 'react-router-dom';
+import { buttonVariants } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { LifeBuoy } from 'lucide-react';
 
@@ -10,14 +11,16 @@ const links = [
 
 export function NavBar() {
   return (
-    <header className="border-b bg-background/95 backdrop-blur sticky top-0 z-10">
-      <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-3">
+    <header className="sticky top-0 border-b bg-background/95 backdrop-blur">
+      <div className="mx-auto flex max-w-6xl flex-col gap-3 px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-6">
         <div className="flex items-center gap-2 font-semibold">
-          <LifeBuoy className="size-5 text-primary" />
-          <span>Support &amp; Refund Agent</span>
-          <span className="hidden text-xs font-normal text-muted-foreground sm:inline">— Mastra template</span>
+          <LifeBuoy className="text-primary" />
+          <div className="flex flex-col">
+            <span>Support Refund Agent</span>
+            <span className="text-xs font-normal text-muted-foreground">Mastra demo</span>
+          </div>
         </div>
-        <nav className="flex items-center gap-1">
+        <nav className="flex flex-wrap items-center gap-2">
           {links.map(link => (
             <NavLink
               key={link.to}
@@ -25,8 +28,8 @@ export function NavBar() {
               end={link.end}
               className={({ isActive }) =>
                 cn(
-                  'rounded-md px-3 py-1.5 text-sm font-medium transition-colors',
-                  isActive ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-muted',
+                  buttonVariants({ variant: isActive ? 'secondary' : 'ghost', size: 'sm' }),
+                  'justify-start',
                 )
               }
             >

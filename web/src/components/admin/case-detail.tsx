@@ -1,5 +1,6 @@
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { StatusBadge, UrgencyBadge } from '@/components/status-badge';
@@ -45,42 +46,35 @@ export function CaseDetail({
       )}
 
       {c.status === 'escalated' && c.escalationReason && (
-        <Card className="border-rose-300 bg-rose-50/60 dark:border-rose-900 dark:bg-rose-950/30">
-          <CardContent className="flex items-start gap-2 pt-6 text-sm">
-            <AlertTriangle className="mt-0.5 size-4 shrink-0 text-rose-600" />
-            <div>
-              <p className="font-medium text-rose-800 dark:text-rose-300">Escalated</p>
-              <p className="text-rose-700/90 dark:text-rose-300/80">{c.escalationReason}</p>
-              {c.approval && (
-                <p className="mt-1 text-xs text-muted-foreground">
-                  Decision by {c.approval.approverId}
-                  {c.approval.note ? `: "${c.approval.note}"` : ''}
-                </p>
-              )}
-            </div>
-          </CardContent>
-        </Card>
+        <Alert variant="destructive">
+          <AlertTriangle />
+          <AlertTitle>Escalated</AlertTitle>
+          <AlertDescription>
+            <p>{c.escalationReason}</p>
+            {c.approval && (
+              <p>
+                Decision by {c.approval.approverId}
+                {c.approval.note ? `: "${c.approval.note}"` : ''}
+              </p>
+            )}
+          </AlertDescription>
+        </Alert>
       )}
 
       {c.refundResult && (
-        <Card className="border-emerald-300 bg-emerald-50/60 dark:border-emerald-900 dark:bg-emerald-950/30">
-          <CardContent className="flex items-start gap-2 pt-6 text-sm">
-            <BadgeCheck className="mt-0.5 size-4 shrink-0 text-emerald-600" />
-            <div>
-              <p className="font-medium text-emerald-800 dark:text-emerald-300">
-                Refund {c.refundResult.status === 'skipped' ? '(already issued)' : 'issued'}: {c.refundResult.amount}{' '}
-                {c.refundResult.currency}
-              </p>
-              <p className="text-xs text-muted-foreground">
-                {c.refundResult.refundId} · order {c.refundResult.orderId} · {new Date(c.refundResult.executedAt).toLocaleString()}
-              </p>
-            </div>
-          </CardContent>
-        </Card>
+        <Alert>
+          <BadgeCheck />
+          <AlertTitle>
+            Refund {c.refundResult.status === 'skipped' ? 'already issued' : 'issued'}: {c.refundResult.amount} {c.refundResult.currency}
+          </AlertTitle>
+          <AlertDescription>
+            {c.refundResult.refundId} · order {c.refundResult.orderId} · {new Date(c.refundResult.executedAt).toLocaleString()}
+          </AlertDescription>
+        </Alert>
       )}
 
       <Tabs defaultValue="conversation">
-        <TabsList>
+        <TabsList className="h-auto flex-wrap">
           <TabsTrigger value="conversation">Conversation</TabsTrigger>
           <TabsTrigger value="reasoning">AI reasoning</TabsTrigger>
           <TabsTrigger value="data">Order &amp; policy data</TabsTrigger>
@@ -88,13 +82,17 @@ export function CaseDetail({
 
         <TabsContent value="conversation" className="space-y-3">
           {c.messages.map(message => (
-            <div key={message.id} className={`rounded-md border p-3 text-sm ${message.author === 'agent' ? 'bg-muted/50' : ''}`}>
-              <div className="mb-1 flex items-center justify-between text-xs text-muted-foreground">
-                <span className="font-medium capitalize">{message.authorName ?? message.author}</span>
-                <span>{new Date(message.createdAt).toLocaleString()}</span>
-              </div>
-              <p className="whitespace-pre-wrap">{message.body}</p>
-            </div>
+            <Card key={message.id}>
+              <CardHeader className="pb-2">
+                <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground">
+                  <CardTitle className="text-sm font-medium capitalize">{message.authorName ?? message.author}</CardTitle>
+                  <span>{new Date(message.createdAt).toLocaleString()}</span>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm whitespace-pre-wrap">{message.body}</p>
+              </CardContent>
+            </Card>
           ))}
         </TabsContent>
 
@@ -103,8 +101,9 @@ export function CaseDetail({
             <Card>
               <CardHeader className="pb-2">
                 <CardTitle className="flex items-center gap-2 text-sm">
-                  <ScrollText className="size-4" /> Triage
+                  <ScrollText /> Triage
                 </CardTitle>
+                <CardDescription>How the agent classified the case before drafting a response.</CardDescription>
               </CardHeader>
               <CardContent className="space-y-2 text-sm">
                 <div className="flex flex-wrap gap-1.5">
@@ -123,8 +122,9 @@ export function CaseDetail({
             <Card>
               <CardHeader className="pb-2">
                 <CardTitle className="flex items-center gap-2 text-sm">
-                  <Receipt className="size-4" /> Retrieved policy context
+                  <Receipt /> Retrieved policy context
                 </CardTitle>
+                <CardDescription>The passages pulled from the knowledge base to ground the reply.</CardDescription>
               </CardHeader>
               <CardContent className="space-y-3 text-sm">
                 {c.policyMatches.map((match, i) => (
@@ -144,8 +144,9 @@ export function CaseDetail({
             <Card>
               <CardHeader className="pb-2">
                 <CardTitle className="flex items-center gap-2 text-sm">
-                  <ArrowUpRight className="size-4" /> Draft resolution
+                  <ArrowUpRight /> Draft resolution
                 </CardTitle>
+                <CardDescription>The response draft the workflow prepared for the support team.</CardDescription>
               </CardHeader>
               <CardContent className="space-y-2 text-sm">
                 <div className="flex flex-wrap gap-1.5">
@@ -166,8 +167,9 @@ export function CaseDetail({
           <Card>
             <CardHeader className="pb-2">
               <CardTitle className="flex items-center gap-2 text-sm">
-                <PackageSearch className="size-4" /> Order
+                <PackageSearch /> Order
               </CardTitle>
+              <CardDescription>The order record looked up before deciding on a refund.</CardDescription>
             </CardHeader>
             <CardContent className="text-sm">
               {c.orderLookup?.found && c.orderLookup.order ? (
@@ -195,6 +197,7 @@ export function CaseDetail({
             <Card>
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm">Subscription</CardTitle>
+                <CardDescription>Current subscription status for this customer.</CardDescription>
               </CardHeader>
               <CardContent className="text-sm">
                 <dl className="grid grid-cols-2 gap-x-4 gap-y-1">
@@ -213,6 +216,7 @@ export function CaseDetail({
             <Card>
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm">Prior refunds</CardTitle>
+                <CardDescription>Earlier refunds issued to the same customer.</CardDescription>
               </CardHeader>
               <CardContent className="space-y-2 text-sm">
                 {c.refundHistory.refunds.map(r => (
@@ -231,7 +235,7 @@ export function CaseDetail({
 
       <Separator />
       <p className="text-xs text-muted-foreground">
-        Workflow run: {c.workflowRunId ?? '—'} · Last updated {new Date(c.updatedAt).toLocaleString()}
+        Workflow run: {c.workflowRunId ?? 'Not available'} · Last updated {new Date(c.updatedAt).toLocaleString()}
       </p>
     </div>
   );
