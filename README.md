@@ -79,7 +79,20 @@ curl -X POST http://localhost:4111/support/cases/case_xxxxxxxx/approve \
 | `/support/cases/:id` | GET | Full case detail (triage, policy matches, order/subscription lookups, draft, approval, refund result). |
 | `/support/cases/:id/approve` | POST | `{ approverId, note? }`. Approves the pending refund and resumes the workflow. |
 | `/support/cases/:id/reject` | POST | `{ approverId, note? }`. Rejects the pending refund and escalates the case. |
+| `/support/cases/:id/feedback` | POST | `{ rating: 'up' \| 'down', comment? }`. Records customer feedback on the final resolution. |
+| `/support/monitoring/summary` | GET | Aggregated containment/escalation rates, refund approvals, customer feedback, token cost, and tool latency/error stats. |
 | `/support/knowledge/reindex` | POST | Rebuilds the policy vector index from `src/mastra/knowledge/docs/`. |
+
+## Monitoring
+
+`GET /support/monitoring/summary` (rendered at [`/monitoring`](http://localhost:5173/monitoring) in the demo UI) covers every metric called out in this template's brief:
+
+- **Containment rate / escalation rate** - the share of decided cases (`resolved` vs. `escalated`) the agent closed on its own vs. handed to a human, computed straight from `SupportCase.status`.
+- **Refund approvals** - recommended vs. approved vs. rejected vs. auto-escalated (over the `MAX_AUTO_APPROVABLE_REFUND` limit, or missing order data), plus the total dollar amount actually issued.
+- **Customer feedback** - a thumbs up/down (plus optional comment) collected from the customer portal once a case closes (`POST /support/cases/:id/feedback`), also forwarded to Mastra's observability feedback API (`mastra.observability.addFeedback`) when the configured storage supports it.
+- **Token cost and slow/failing tools** - read directly from the spans Mastra already records for every agent and tool call (via the observability storage domain's `getTrace`), with zero extra instrumentation. Token counts are exact; the dollar figure is a rough estimate from public reference pricing.
+
+All of this lives in `src/mastra/lib/monitoring.ts`, so it's easy to swap in real pricing data or point it at a storage provider (Postgres, Mastra Platform) that also supports the observability metrics/feedback OLAP APIs (`getMetricAggregate`, `getFeedbackAggregate`, etc.) instead of scanning spans directly - useful once case volume outgrows a per-case trace fetch.
 
 ## Making it yours
 
@@ -87,7 +100,6 @@ curl -X POST http://localhost:4111/support/cases/case_xxxxxxxx/approve \
 - **Connect a real commerce backend.** `src/mastra/lib/mock-commerce.ts` holds deterministic order/subscription/refund fixtures; replace them with real calls (Shopify, Stripe Billing, an internal orders service). The tool schemas in `src/mastra/tools/` don't need to change.
 - **Persist cases to a real database.** `src/mastra/lib/case-store.ts` is an in-memory store on purpose (keeps the template dependency-free); swap it for a table in the same storage backing Mastra before shipping this anywhere real.
 - **Add evals.** Register `@mastra/evals` scorers against `triageAgent` and `responseAgent` in `src/mastra/index.ts` for groundedness, policy compliance, routing accuracy, tool-call correctness, resolution quality, and multi-turn consistency.
-- **Add monitoring.** Containment rate, escalation rate, and refund approvals are all derivable from the `SupportCase` fields already tracked (`status`, `refundResult`, `escalationReason`); token cost and slow/failing tools come from the tracing already wired up via `@mastra/observability`.
 - **Add specialist agents.** An `escalationAgent` or `orderAgent` are natural next steps to wire into `supportSupervisorAgent`.
 
 ## About Mastra templates

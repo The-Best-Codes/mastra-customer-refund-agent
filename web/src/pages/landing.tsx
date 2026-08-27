@@ -16,22 +16,28 @@ const ROLE_CARDS = [
     href: '/admin',
     cta: 'Open admin queue',
   },
+  {
+    title: 'See how it performs',
+    description: 'Containment, escalation, refund approvals, customer feedback, token cost, and tool health - all pulled from Mastra observability data.',
+    href: '/monitoring',
+    cta: 'Open monitoring',
+  },
 ];
 
 export function Landing() {
   return (
-    <div className="mx-auto max-w-4xl">
+    <div className="mx-auto max-w-5xl">
       <section className="flex flex-col gap-6">
         <div className="flex flex-col gap-3 text-center">
           <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">
-            Do you want to use the demo as a customer or as support?
+            Explore the demo as a customer, as support, or from the numbers.
           </h1>
           <p className="mx-auto max-w-2xl text-muted-foreground">
-            The customer side lets you submit a support request. The admin side lets you review cases and approve or reject refund recommendations.
+            The customer side lets you submit a support request. The admin side lets you review cases and approve or reject refund recommendations. The monitoring dashboard shows how the agent is performing across every case.
           </p>
         </div>
 
-        <div className="grid gap-4 md:grid-cols-2">
+        <div className="grid gap-4 md:grid-cols-3">
           {ROLE_CARDS.map(role => (
             <Card key={role.href}>
               <CardHeader>

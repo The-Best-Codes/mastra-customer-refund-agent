@@ -2,6 +2,8 @@ import { registerApiRoute } from '@mastra/core/server';
 import { caseStore } from '../lib/case-store';
 import { MOCK_INBOUND_EMAILS } from '../integrations/mock-support';
 import { REQUEST_APPROVAL_STEP_ID } from '../workflows/resolve-support-case';
+import { computeMonitoringSummary } from '../lib/monitoring';
+import type { CaseFeedback } from '../domain/support-case';
 
 /**
  * POST /support/inbound
@@ -125,6 +127,78 @@ export const supportCaseRejectRoute = registerApiRoute('/support/cases/:caseId/r
   handler: async c => resumeApproval(c, false),
 });
 
+/**
+ * POST /support/cases/:caseId/feedback
+ *
+ * Lets the customer (or the admin, testing on their behalf) rate the final resolution. Stored
+ * on the case for the monitoring dashboard, and forwarded to Mastra's observability feedback
+ * API (`mastra.observability.addFeedback`) best-effort so it shows up alongside the case's
+ * trace when the configured storage provider supports the observability feedback domain.
+ */
+export const supportCaseFeedbackRoute = registerApiRoute('/support/cases/:caseId/feedback', {
+  method: 'POST',
+  handler: async c => {
+    const caseId = c.req.param('caseId');
+    const supportCase = caseStore.get(caseId);
+    if (!supportCase) return c.json({ error: 'Case not found.' }, 404);
+
+    let body: { rating?: string; comment?: string } = {};
+    try {
+      body = await c.req.json();
+    } catch {
+      return c.json({ error: 'Invalid JSON body.' }, 400);
+    }
+
+    if (body.rating !== 'up' && body.rating !== 'down') {
+      return c.json({ error: "rating must be 'up' or 'down'." }, 400);
+    }
+
+    const feedback: CaseFeedback = {
+      rating: body.rating,
+      comment: body.comment,
+      submittedAt: new Date().toISOString(),
+    };
+    const updated = caseStore.update(caseId, { feedback });
+
+    const mastra = c.get('mastra');
+    if (supportCase.traceId && mastra.observability.addFeedback) {
+      try {
+        await mastra.observability.addFeedback({
+          traceId: supportCase.traceId,
+          feedback: {
+            feedbackSource: 'user',
+            feedbackType: 'thumbs',
+            value: feedback.rating === 'up' ? 1 : -1,
+            comment: feedback.comment,
+          },
+        });
+      } catch (error) {
+        mastra.getLogger()?.warn('Failed to forward case feedback to observability storage', { error, caseId });
+      }
+    }
+
+    return c.json(updated);
+  },
+});
+
+/**
+ * GET /support/monitoring/summary
+ *
+ * Aggregates the metrics called out in this template's brief: containment rate, escalation
+ * rate, refund approvals, customer feedback, token cost, and slow/failing tools. The funnel,
+ * refund, and feedback numbers come straight from the case store; token usage and tool
+ * latency/reliability are derived from the spans Mastra already records for every agent and
+ * tool call, read via the observability storage domain (see `src/mastra/lib/monitoring.ts`).
+ */
+export const supportMonitoringSummaryRoute = registerApiRoute('/support/monitoring/summary', {
+  method: 'GET',
+  handler: async c => {
+    const mastra = c.get('mastra');
+    const summary = await computeMonitoringSummary(mastra);
+    return c.json(summary);
+  },
+});
+
 export const supportKnowledgeReindexRoute = registerApiRoute('/support/knowledge/reindex', {
   method: 'POST',
   handler: async c => {
@@ -146,5 +220,7 @@ export const supportRoutes = [
   supportCaseDetailRoute,
   supportCaseApproveRoute,
   supportCaseRejectRoute,
+  supportCaseFeedbackRoute,
+  supportMonitoringSummaryRoute,
   supportKnowledgeReindexRoute,
 ];

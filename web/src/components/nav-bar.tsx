@@ -7,6 +7,7 @@ const links = [
   { to: '/', label: 'Overview', end: true },
   { to: '/portal', label: 'Customer portal' },
   { to: '/admin', label: 'Support admin' },
+  { to: '/monitoring', label: 'Monitoring' },
 ];
 
 export function NavBar() {

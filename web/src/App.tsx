@@ -3,6 +3,7 @@ import { NavBar } from '@/components/nav-bar';
 import { Landing } from '@/pages/landing';
 import { Portal } from '@/pages/portal';
 import { Admin } from '@/pages/admin';
+import { Monitoring } from '@/pages/monitoring';
 
 function App() {
   return (
@@ -14,6 +15,7 @@ function App() {
           <Route path="/portal" element={<Portal />} />
           <Route path="/admin" element={<Admin />} />
           <Route path="/admin/:caseId" element={<Admin />} />
+          <Route path="/monitoring" element={<Monitoring />} />
         </Routes>
       </main>
     </div>

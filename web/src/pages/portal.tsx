@@ -10,14 +10,22 @@ import { Textarea } from '@/components/ui/textarea';
 import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
 import { StatusBadge } from '@/components/status-badge';
+import { CaseFeedback } from '@/components/portal/case-feedback';
 import { isCaseActive, listCases, listMockEmails, submitCase } from '@/lib/api';
 import type { MockEmailPayload, SupportCase } from '@/lib/types';
 import { ArrowRight, Loader2, Send } from 'lucide-react';
 
 const STORAGE_KEY = 'support-demo:customer-email';
 
-function CaseCard({ supportCase }: { supportCase: SupportCase }) {
+function CaseCard({
+  supportCase,
+  onCaseUpdated,
+}: {
+  supportCase: SupportCase;
+  onCaseUpdated: (updated: SupportCase) => void;
+}) {
   const lastAgentMessage = [...supportCase.messages].reverse().find(m => m.author === 'agent');
+  const isClosed = supportCase.status === 'resolved' || supportCase.status === 'escalated';
 
   return (
     <Card>
@@ -50,6 +58,7 @@ function CaseCard({ supportCase }: { supportCase: SupportCase }) {
             Refund of {supportCase.refundResult.amount} {supportCase.refundResult.currency} issued.
           </p>
         )}
+        {isClosed && <CaseFeedback supportCase={supportCase} onSubmitted={onCaseUpdated} />}
       </CardContent>
     </Card>
   );
@@ -272,7 +281,11 @@ export function Portal() {
               )}
               <div className="flex flex-col gap-3">
                 {cases.map(c => (
-                  <CaseCard key={c.id} supportCase={c} />
+                  <CaseCard
+                    key={c.id}
+                    supportCase={c}
+                    onCaseUpdated={updated => setCases(prev => prev.map(existing => (existing.id === updated.id ? updated : existing)))}
+                  />
                 ))}
               </div>
             </CardContent>

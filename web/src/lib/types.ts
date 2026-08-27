@@ -100,6 +100,12 @@ export interface RefundResult {
   executedAt: string;
 }
 
+export interface CaseFeedback {
+  rating: 'up' | 'down';
+  comment?: string;
+  submittedAt: string;
+}
+
 export interface SupportCase {
   id: string;
   externalId: string;
@@ -121,6 +127,8 @@ export interface SupportCase {
   finalResponse?: string;
   escalationReason?: string;
   workflowRunId?: string;
+  traceId?: string;
+  feedback?: CaseFeedback;
 }
 
 export interface MockEmailPayload {
@@ -130,4 +138,75 @@ export interface MockEmailPayload {
   subject: string;
   body: string;
   receivedAt?: string;
+}
+
+// Mirrors src/mastra/lib/monitoring.ts on the API side.
+
+export interface CaseFunnelMetrics {
+  totalCases: number;
+  new: number;
+  processing: number;
+  waitingApproval: number;
+  resolved: number;
+  escalated: number;
+  failed: number;
+  containmentRate: number | null;
+  escalationRate: number | null;
+  avgResolutionMinutes: number | null;
+}
+
+export interface RefundApprovalMetrics {
+  recommended: number;
+  approved: number;
+  rejected: number;
+  autoEscalated: number;
+  approvalRate: number | null;
+  totalApprovedAmount: number;
+  currency: string;
+}
+
+export interface FeedbackMetrics {
+  totalResponses: number;
+  up: number;
+  down: number;
+  satisfactionRate: number | null;
+  recent: Array<{ caseId: string; subject: string; rating: 'up' | 'down'; comment?: string; submittedAt: string }>;
+}
+
+export interface ToolStat {
+  tool: string;
+  calls: number;
+  errors: number;
+  errorRate: number;
+  avgDurationMs: number;
+  maxDurationMs: number;
+}
+
+export interface AgentTokenUsage {
+  agent: string;
+  calls: number;
+  inputTokens: number;
+  outputTokens: number;
+  estimatedCostUsd: number;
+}
+
+export interface TraceMetrics {
+  tracesInspected: number;
+  totalInputTokens: number;
+  totalOutputTokens: number;
+  estimatedCostUsd: number;
+  byAgent: AgentTokenUsage[];
+  tools: ToolStat[];
+  slowestTool: ToolStat | null;
+  leastReliableTool: ToolStat | null;
+  observabilityUnavailable: boolean;
+}
+
+export interface MonitoringSummary {
+  generatedAt: string;
+  casesConsidered: number;
+  funnel: CaseFunnelMetrics;
+  refunds: RefundApprovalMetrics;
+  feedback: FeedbackMetrics;
+  traces: TraceMetrics;
 }

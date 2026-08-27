@@ -121,6 +121,13 @@ export const approvalDecisionSchema = z.object({
 });
 export type ApprovalDecision = z.infer<typeof approvalDecisionSchema>;
 
+export const caseFeedbackSchema = z.object({
+  rating: z.enum(['up', 'down']),
+  comment: z.string().optional(),
+  submittedAt: z.string(),
+});
+export type CaseFeedback = z.infer<typeof caseFeedbackSchema>;
+
 export const refundResultSchema = z.object({
   refundId: z.string(),
   orderId: z.string(),
@@ -153,6 +160,9 @@ export const supportCaseSchema = z.object({
   finalResponse: z.string().optional(),
   escalationReason: z.string().optional(),
   workflowRunId: z.string().optional(),
+  /** Root trace id for the resolve-support-case workflow run, used to pull token/tool observability data for monitoring. */
+  traceId: z.string().optional(),
+  feedback: caseFeedbackSchema.optional(),
   metadata: z.record(z.string(), z.unknown()).default({}),
 });
 export type SupportCase = z.infer<typeof supportCaseSchema>;

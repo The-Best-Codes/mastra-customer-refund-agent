@@ -1,4 +1,4 @@
-import type { MockEmailPayload, SupportCase } from './types';
+import type { MockEmailPayload, MonitoringSummary, SupportCase } from './types';
 
 // In dev, Vite proxies `/support/*` to the Mastra API server (see vite.config.ts).
 // In production, point VITE_API_BASE_URL at wherever the Mastra app is deployed.
@@ -43,6 +43,14 @@ export function rejectCase(caseId: string, approverId: string, note?: string): P
 
 export function reindexKnowledge(): Promise<{ indexed: number }> {
   return request('/support/knowledge/reindex', { method: 'POST' });
+}
+
+export function submitCaseFeedback(caseId: string, rating: 'up' | 'down', comment?: string): Promise<SupportCase> {
+  return request(`/support/cases/${caseId}/feedback`, { method: 'POST', body: JSON.stringify({ rating, comment }) });
+}
+
+export function getMonitoringSummary(): Promise<MonitoringSummary> {
+  return request('/support/monitoring/summary');
 }
 
 /** A case is still moving through the pipeline and worth polling for updates. */

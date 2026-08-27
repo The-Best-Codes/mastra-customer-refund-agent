@@ -21,9 +21,16 @@ const classifyStep = createStep({
   description: "Runs the triage agent on the customer's message.",
   inputSchema: caseIdSchema,
   outputSchema: caseIdSchema,
-  execute: async ({ inputData }) => {
+  execute: async ({ inputData, tracingContext }) => {
     const supportCase = getCaseOrThrow(inputData.caseId);
     const latestMessage = supportCase.messages[supportCase.messages.length - 1];
+
+    // Capture the run's trace id once, up front, so the monitoring dashboard can pull
+    // token usage and tool-call stats for this case straight from observability storage.
+    const traceId = tracingContext?.currentSpan?.traceId;
+    if (traceId) {
+      caseStore.update(supportCase.id, { traceId });
+    }
 
     const result = await triageAgent.generate(
       [
