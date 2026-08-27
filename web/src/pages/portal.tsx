@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { toast } from 'sonner';
-import { Button } from '@/components/ui/button';
+import { Button, buttonVariants } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from '@/components/ui/empty';
 import { Field, FieldDescription, FieldGroup, FieldLabel } from '@/components/ui/field';
@@ -13,7 +13,8 @@ import { StatusBadge } from '@/components/status-badge';
 import { CaseFeedback } from '@/components/portal/case-feedback';
 import { isCaseActive, listCases, listMockEmails, submitCase } from '@/lib/api';
 import type { MockEmailPayload, SupportCase } from '@/lib/types';
-import { ArrowRight, Loader2, Send } from 'lucide-react';
+import { ArrowRight, Send } from 'lucide-react';
+import { Spinner } from '@/components/ui/spinner';
 
 const STORAGE_KEY = 'support-demo:customer-email';
 
@@ -163,10 +164,10 @@ export function Portal() {
             Send a support request and track cases by email.
           </p>
         </div>
-        <Button variant="outline" render={<Link to="/admin" />}>
+        <Link to="/admin" className={buttonVariants({ variant: 'outline' })}>
           Open support admin
           <ArrowRight data-icon="inline-end" />
-        </Button>
+        </Link>
       </section>
 
       <div className="grid gap-8 lg:grid-cols-[1fr_1.1fr]">
@@ -209,7 +210,7 @@ export function Portal() {
               </CardContent>
               <CardFooter>
                 <Button type="submit" disabled={submitting}>
-                  {submitting ? <Loader2 className="animate-spin" data-icon="inline-start" /> : <Send data-icon="inline-start" />}
+                  {submitting ? <Spinner data-icon="inline-start" /> : <Send data-icon="inline-start" />}
                   Send message
                 </Button>
               </CardFooter>

@@ -5,7 +5,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Field, FieldDescription, FieldGroup, FieldLabel } from '@/components/ui/field';
 import { Separator } from '@/components/ui/separator';
 import { Textarea } from '@/components/ui/textarea';
-import { CheckCircle2, Loader2, XCircle } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { CheckCircle2, XCircle } from 'lucide-react';
+import { Spinner } from '@/components/ui/spinner';
 import type { SupportCase } from '@/lib/types';
 
 export function ApprovalCard({
@@ -71,9 +73,9 @@ export function ApprovalCard({
         {draft.citedSources.length > 0 && (
           <div className="flex flex-wrap gap-1.5">
             {draft.citedSources.map(source => (
-              <span key={source} className="rounded-md border px-2 py-1 text-xs text-muted-foreground">
+              <Badge key={source} variant="outline">
                 {source}
-              </span>
+              </Badge>
             ))}
           </div>
         )}
@@ -92,11 +94,11 @@ export function ApprovalCard({
         </FieldGroup>
         <div className="flex gap-2">
           <Button onClick={() => handle(true)} disabled={pending !== null}>
-            {pending === 'approve' ? <Loader2 className="animate-spin" data-icon="inline-start" /> : <CheckCircle2 data-icon="inline-start" />}
+            {pending === 'approve' ? <Spinner data-icon="inline-start" /> : <CheckCircle2 data-icon="inline-start" />}
             Approve refund
           </Button>
           <Button onClick={() => handle(false)} disabled={pending !== null} variant="outline">
-            {pending === 'reject' ? <Loader2 className="animate-spin" data-icon="inline-start" /> : <XCircle data-icon="inline-start" />}
+            {pending === 'reject' ? <Spinner data-icon="inline-start" /> : <XCircle data-icon="inline-start" />}
             Reject and escalate
           </Button>
         </div>

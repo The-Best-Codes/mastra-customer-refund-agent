@@ -4,7 +4,8 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { submitCaseFeedback } from '@/lib/api';
 import type { SupportCase } from '@/lib/types';
-import { Loader2, Send, ThumbsDown, ThumbsUp } from 'lucide-react';
+import { Send, ThumbsDown, ThumbsUp } from 'lucide-react';
+import { Spinner } from '@/components/ui/spinner';
 
 /**
  * Lets the customer rate the resolution once a case is closed. Feeds the "customer feedback"
@@ -77,7 +78,7 @@ export function CaseFeedback({
             rows={2}
           />
           <Button size="sm" onClick={() => submit(choosing)} disabled={submitting} className="self-start">
-            {submitting ? <Loader2 className="animate-spin" data-icon="inline-start" /> : <Send data-icon="inline-start" />}
+            {submitting ? <Spinner data-icon="inline-start" /> : <Send data-icon="inline-start" />}
             Send feedback
           </Button>
         </div>

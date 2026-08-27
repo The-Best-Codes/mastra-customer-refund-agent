@@ -1,3 +1,4 @@
+import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { StatusBadge, UrgencyBadge } from '@/components/status-badge';
 import type { SupportCase } from '@/lib/types';
@@ -30,9 +31,9 @@ export function CaseListItem({
       <div className="mt-2 flex items-center gap-1.5">
         {supportCase.triage && (
           <>
-            <span className="rounded bg-muted px-1.5 py-0.5 text-[11px] font-medium capitalize text-muted-foreground">
+            <Badge variant="secondary" className="capitalize">
               {supportCase.triage.intent.replace(/_/g, ' ')}
-            </span>
+            </Badge>
             <UrgencyBadge urgency={supportCase.triage.urgency} />
           </>
         )}

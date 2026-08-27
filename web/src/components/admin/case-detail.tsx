@@ -20,7 +20,7 @@ export function CaseDetail({
   const c = supportCase;
 
   return (
-    <div className="space-y-4">
+    <div className="flex flex-col gap-4">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h2 className="text-xl font-semibold">{c.subject}</h2>
@@ -80,7 +80,7 @@ export function CaseDetail({
           <TabsTrigger value="data">Order &amp; policy data</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="conversation" className="space-y-3">
+        <TabsContent value="conversation" className="flex flex-col gap-3">
           {c.messages.map(message => (
             <Card key={message.id}>
               <CardHeader className="pb-2">
@@ -96,7 +96,7 @@ export function CaseDetail({
           ))}
         </TabsContent>
 
-        <TabsContent value="reasoning" className="space-y-4">
+        <TabsContent value="reasoning" className="flex flex-col gap-4">
           {c.triage && (
             <Card>
               <CardHeader className="pb-2">
@@ -105,7 +105,7 @@ export function CaseDetail({
                 </CardTitle>
                 <CardDescription>How the agent classified the case before drafting a response.</CardDescription>
               </CardHeader>
-              <CardContent className="space-y-2 text-sm">
+              <CardContent className="flex flex-col gap-2 text-sm">
                 <div className="flex flex-wrap gap-1.5">
                   <Badge variant="secondary" className="capitalize">{c.triage.intent.replace(/_/g, ' ')}</Badge>
                   <UrgencyBadge urgency={c.triage.urgency} />
@@ -126,9 +126,9 @@ export function CaseDetail({
                 </CardTitle>
                 <CardDescription>The passages pulled from the knowledge base to ground the reply.</CardDescription>
               </CardHeader>
-              <CardContent className="space-y-3 text-sm">
+              <CardContent className="flex flex-col gap-3 text-sm">
                 {c.policyMatches.map((match, i) => (
-                  <div key={`${match.source}-${i}`} className="space-y-1 border-b pb-2 last:border-0 last:pb-0">
+                  <div key={`${match.source}-${i}`} className="flex flex-col gap-1 border-b pb-2 last:border-0 last:pb-0">
                     <div className="flex items-center justify-between text-xs text-muted-foreground">
                       <span className="font-medium text-foreground">{match.title}</span>
                       <span>score {match.score.toFixed(2)}</span>
@@ -148,7 +148,7 @@ export function CaseDetail({
                 </CardTitle>
                 <CardDescription>The response draft the workflow prepared for the support team.</CardDescription>
               </CardHeader>
-              <CardContent className="space-y-2 text-sm">
+              <CardContent className="flex flex-col gap-2 text-sm">
                 <div className="flex flex-wrap gap-1.5">
                   <Badge variant={c.draft.recommendRefund ? 'default' : 'outline'}>
                     {c.draft.recommendRefund ? `Recommends refund` : 'No refund recommended'}
@@ -163,7 +163,7 @@ export function CaseDetail({
           )}
         </TabsContent>
 
-        <TabsContent value="data" className="space-y-4">
+        <TabsContent value="data" className="flex flex-col gap-4">
           <Card>
             <CardHeader className="pb-2">
               <CardTitle className="flex items-center gap-2 text-sm">
@@ -218,7 +218,7 @@ export function CaseDetail({
                 <CardTitle className="text-sm">Prior refunds</CardTitle>
                 <CardDescription>Earlier refunds issued to the same customer.</CardDescription>
               </CardHeader>
-              <CardContent className="space-y-2 text-sm">
+              <CardContent className="flex flex-col gap-2 text-sm">
                 {c.refundHistory.refunds.map(r => (
                   <div key={r.refundId} className="flex justify-between border-b pb-1 last:border-0">
                     <span>{r.reason}</span>

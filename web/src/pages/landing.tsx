@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { Button } from '@/components/ui/button';
+import { buttonVariants } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { ArrowRight } from 'lucide-react';
 
@@ -45,10 +45,10 @@ export function Landing() {
                 <CardDescription>{role.description}</CardDescription>
               </CardHeader>
               <CardContent>
-                <Button render={<Link to={role.href} />}>
+                <Link to={role.href} className={buttonVariants()}>
                   {role.cta}
                   <ArrowRight data-icon="inline-end" />
-                </Button>
+                </Link>
               </CardContent>
             </Card>
           ))}

@@ -3,12 +3,13 @@ import { Link } from 'react-router-dom';
 import { toast } from 'sonner';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
+import { Button, buttonVariants } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from '@/components/ui/empty';
-import { Progress, ProgressLabel, ProgressTrack, ProgressIndicator } from '@/components/ui/progress';
+import { Progress, ProgressLabel } from '@/components/ui/progress';
 import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Spinner } from '@/components/ui/spinner';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { getMonitoringSummary } from '@/lib/api';
@@ -121,13 +122,13 @@ export function Monitoring() {
         </div>
         <div className="flex items-center gap-2">
           <Button variant="outline" size="sm" onClick={() => refresh()} disabled={refreshing}>
-            <RefreshCcw className={refreshing ? 'animate-spin' : ''} data-icon="inline-start" />
+            {refreshing ? <Spinner data-icon="inline-start" /> : <RefreshCcw data-icon="inline-start" />}
             Refresh
           </Button>
-          <Button variant="outline" render={<Link to="/admin" />}>
+          <Link to="/admin" className={buttonVariants({ variant: 'outline' })}>
             Open support admin
             <ArrowRight data-icon="inline-end" />
-          </Button>
+          </Link>
         </div>
       </section>
 
@@ -205,9 +206,6 @@ export function Monitoring() {
                       <ProgressLabel>{label}</ProgressLabel>
                       <span className="text-sm text-muted-foreground tabular-nums">{count}</span>
                     </div>
-                    <ProgressTrack>
-                      <ProgressIndicator />
-                    </ProgressTrack>
                   </Progress>
                 ))}
                 <Separator />
@@ -326,12 +324,12 @@ export function Monitoring() {
                                 {tool.tool}
                                 {summary.traces.slowestTool?.tool === tool.tool && (
                                   <Badge variant="secondary" className="gap-1">
-                                    <Timer className="size-3" /> slowest
+                                    <Timer data-icon="inline-start" /> slowest
                                   </Badge>
                                 )}
                                 {summary.traces.leastReliableTool?.tool === tool.tool && tool.errors > 0 && (
                                   <Badge variant="destructive" className="gap-1">
-                                    <AlertTriangle className="size-3" /> flaky
+                                    <AlertTriangle data-icon="inline-start" /> flaky
                                   </Badge>
                                 )}
                               </div>
@@ -382,7 +380,7 @@ export function Monitoring() {
                         <p className="text-xs text-muted-foreground">{new Date(entry.submittedAt).toLocaleString()}</p>
                       </div>
                       <Badge variant={entry.rating === 'up' ? 'default' : 'destructive'} className="gap-1">
-                        {entry.rating === 'up' ? <ThumbsUp className="size-3" /> : <ThumbsDown className="size-3" />}
+                        {entry.rating === 'up' ? <ThumbsUp data-icon="inline-start" /> : <ThumbsDown data-icon="inline-start" />}
                         {entry.rating === 'up' ? 'Resolved' : 'Not resolved'}
                       </Badge>
                     </div>

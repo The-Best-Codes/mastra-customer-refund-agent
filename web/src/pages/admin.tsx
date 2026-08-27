@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useNavigate, useParams } from 'react-router-dom';
 import { toast } from 'sonner';
-import { Button } from '@/components/ui/button';
+import { Button, buttonVariants } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Empty, EmptyHeader, EmptyTitle, EmptyDescription } from '@/components/ui/empty';
 import { Field, FieldDescription, FieldGroup, FieldLabel } from '@/components/ui/field';
@@ -16,7 +16,8 @@ import { CaseDetail } from '@/components/admin/case-detail';
 import { StatusBadge } from '@/components/status-badge';
 import { approveCase, listCases, listMockEmails, rejectCase, reindexKnowledge, submitCase } from '@/lib/api';
 import type { MockEmailPayload, SupportCase } from '@/lib/types';
-import { ArrowRight, Loader2, RefreshCcw, Send } from 'lucide-react';
+import { ArrowRight, RefreshCcw, Send } from 'lucide-react';
+import { Spinner } from '@/components/ui/spinner';
 
 const APPROVER_STORAGE_KEY = 'support-demo:approver-id';
 
@@ -134,10 +135,10 @@ export function Admin() {
             Review cases, inspect the workflow output, and approve or reject refunds.
           </p>
         </div>
-        <Button variant="outline" render={<Link to="/portal" />}>
+        <Link to="/portal" className={buttonVariants({ variant: 'outline' })}>
           Open customer portal
           <ArrowRight data-icon="inline-end" />
-        </Button>
+        </Link>
       </section>
 
       <section className="grid gap-6 xl:grid-cols-[320px_1fr]">
@@ -175,11 +176,11 @@ export function Admin() {
             <Separator />
             <div className="flex flex-col gap-3 sm:flex-row xl:flex-col">
               <Button onClick={handleSimulate} disabled={sending || !selectedMock}>
-                {sending ? <Loader2 className="animate-spin" data-icon="inline-start" /> : <Send data-icon="inline-start" />}
+                {sending ? <Spinner data-icon="inline-start" /> : <Send data-icon="inline-start" />}
                 Create sample case
               </Button>
               <Button variant="outline" onClick={handleReindex} disabled={reindexing}>
-                {reindexing ? <Loader2 className="animate-spin" data-icon="inline-start" /> : <RefreshCcw data-icon="inline-start" />}
+                {reindexing ? <Spinner data-icon="inline-start" /> : <RefreshCcw data-icon="inline-start" />}
                 Reindex knowledge
               </Button>
             </div>
