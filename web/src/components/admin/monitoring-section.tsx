@@ -1,9 +1,8 @@
 import { useCallback, useEffect, useState } from "react";
-import { Link } from "react-router-dom";
 import { toast } from "sonner";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
-import { Button, buttonVariants } from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
@@ -38,7 +37,6 @@ import { getMonitoringSummary } from "@/lib/api";
 import type { MonitoringSummary } from "@/lib/types";
 import {
   AlertTriangle,
-  ArrowRight,
   Info,
   MessageSquareWarning,
   RefreshCcw,
@@ -107,7 +105,12 @@ function RateCard({
   );
 }
 
-export function Monitoring() {
+/**
+ * Containment, escalation, refund approvals, customer feedback, and the
+ * token cost / tool health data Mastra already tracks for every case.
+ * Rendered as a section within the admin page rather than its own route.
+ */
+export function MonitoringSection() {
   const [summary, setSummary] = useState<MonitoringSummary | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -140,37 +143,29 @@ export function Monitoring() {
 
   return (
     <div className="flex flex-col gap-6">
-      <section className="flex flex-wrap items-start justify-between gap-4">
-        <div className="flex flex-col gap-2">
-          <h1 className="text-3xl font-semibold tracking-tight">
-            Agent monitoring
-          </h1>
-          <p className="max-w-2xl text-muted-foreground">
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div className="flex flex-col gap-1">
+          <h2 className="text-xl font-semibold tracking-tight">Monitoring</h2>
+          <p className="max-w-2xl text-sm text-muted-foreground">
             Containment, escalation, refund approvals, customer feedback, and
             the token cost and tool health data Mastra already tracks for every
             case.
           </p>
         </div>
-        <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => refresh()}
-            disabled={refreshing}
-          >
-            {refreshing ? (
-              <Spinner data-icon="inline-start" />
-            ) : (
-              <RefreshCcw data-icon="inline-start" />
-            )}
-            Refresh
-          </Button>
-          <Link to="/admin" className={buttonVariants({ variant: "outline" })}>
-            Open support admin
-            <ArrowRight data-icon="inline-end" />
-          </Link>
-        </div>
-      </section>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => refresh()}
+          disabled={refreshing}
+        >
+          {refreshing ? (
+            <Spinner data-icon="inline-start" />
+          ) : (
+            <RefreshCcw data-icon="inline-start" />
+          )}
+          Refresh
+        </Button>
+      </div>
 
       {loading && (
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
@@ -185,11 +180,8 @@ export function Monitoring() {
           <EmptyHeader>
             <EmptyTitle>No cases yet</EmptyTitle>
             <EmptyDescription>
-              Send a sample case from the{" "}
-              <Link to="/portal" className="underline">
-                customer portal
-              </Link>{" "}
-              to start populating this dashboard.
+              Send a case from the customer portal to start populating this
+              dashboard.
             </EmptyDescription>
           </EmptyHeader>
         </Empty>

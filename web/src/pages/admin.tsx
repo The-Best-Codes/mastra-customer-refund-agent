@@ -34,6 +34,7 @@ import {
 } from "@/components/ui/table";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { CaseDetail } from "@/components/admin/case-detail";
+import { MonitoringSection } from "@/components/admin/monitoring-section";
 import { StatusBadge } from "@/components/status-badge";
 import {
   approveCase,
@@ -148,8 +149,10 @@ export function Admin() {
             Support admin
           </h1>
           <p className="max-w-2xl text-muted-foreground">
-            Review cases, inspect the workflow output, and approve or reject
-            refunds.
+            This is what your support team would see: review cases, inspect how
+            the AI investigated each one, and approve or reject the refunds it
+            recommends. Cases it can't resolve on its own show up here waiting
+            for a decision.
           </p>
         </div>
       </section>
@@ -305,6 +308,10 @@ export function Admin() {
           </Card>
         </div>
       </section>
+
+      <Separator />
+
+      <MonitoringSection />
     </div>
   );
 }

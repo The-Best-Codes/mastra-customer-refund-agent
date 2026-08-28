@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useState } from "react";
-import { Link } from "react-router-dom";
 import { toast } from "sonner";
 import { Button, buttonVariants } from "@/components/ui/button";
 import {
@@ -10,6 +9,20 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import {
   Empty,
   EmptyDescription,
@@ -24,16 +37,18 @@ import {
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { StatusBadge } from "@/components/status-badge";
 import { CaseFeedback } from "@/components/portal/case-feedback";
 import { isCaseActive, listCases, listMockEmails, submitCase } from "@/lib/api";
 import type { MockEmailPayload, SupportCase } from "@/lib/types";
-import { ArrowRight, Send } from "lucide-react";
+import { ArrowUpRight, Plus, Send } from "lucide-react";
 import { Spinner } from "@/components/ui/spinner";
 
-const STORAGE_KEY = "support-demo:customer-email";
+// Every case submitted through this demo portal comes from the same
+// "logged in" customer - there's no per-user auth, so we skip asking for an
+// email and use one fixed address everywhere instead.
+const CUSTOMER_EMAIL = "alex@example.com";
 
 function CaseCard({
   supportCase,
@@ -103,96 +118,76 @@ function CaseCard({
 }
 
 export function Portal() {
-  const [email, setEmail] = useState("");
   const [name, setName] = useState("");
   const [subject, setSubject] = useState("");
   const [body, setBody] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [mockEmails, setMockEmails] = useState<MockEmailPayload[]>([]);
   const [cases, setCases] = useState<SupportCase[]>([]);
-  const [lookupEmail, setLookupEmail] = useState("");
-  const [loadingCases, setLoadingCases] = useState(false);
+  const [loadingCases, setLoadingCases] = useState(true);
+  const [view, setView] = useState<"form" | "cases">("form");
+  const [nextStepsOpen, setNextStepsOpen] = useState(false);
+  const [lastCaseId, setLastCaseId] = useState<string | null>(null);
 
-  useEffect(() => {
-    const saved = localStorage.getItem(STORAGE_KEY);
-    if (saved) {
-      setEmail(saved);
-      setLookupEmail(saved);
-    }
-    listMockEmails()
-      .then((res) => setMockEmails(res.emails))
-      .catch(() => {});
-  }, []);
-
-  const refreshCases = useCallback(async (forEmail: string) => {
-    if (!forEmail) {
-      setCases([]);
-      return;
-    }
+  const refreshCases = useCallback(async () => {
     setLoadingCases(true);
     try {
-      const res = await listCases(forEmail);
+      const res = await listCases();
       setCases(res.cases);
+      return res.cases;
     } catch {
       // Keep showing the last known list on transient errors.
+      return null;
     } finally {
       setLoadingCases(false);
     }
   }, []);
 
   useEffect(() => {
-    refreshCases(lookupEmail);
-  }, [lookupEmail, refreshCases]);
+    listMockEmails()
+      .then((res) => setMockEmails(res.emails))
+      .catch(() => {});
+  }, []);
 
-  // Poll while any of the customer's cases are still moving through the pipeline.
+  // On first load, jump straight to the case list if there's already
+  // history - only show the submission form when there's nothing to show.
   useEffect(() => {
-    if (!lookupEmail || !cases.some((c) => isCaseActive(c.status))) return;
-    const interval = setInterval(() => refreshCases(lookupEmail), 4000);
+    (async () => {
+      const result = await refreshCases();
+      if (result && result.length > 0) setView("cases");
+    })();
+  }, [refreshCases]);
+
+  // Poll while any case is still moving through the pipeline.
+  useEffect(() => {
+    if (!cases.some((c) => isCaseActive(c.status))) return;
+    const interval = setInterval(refreshCases, 4000);
     return () => clearInterval(interval);
-  }, [lookupEmail, cases, refreshCases]);
+  }, [cases, refreshCases]);
+
+  function applySample(mock: MockEmailPayload) {
+    setName(mock.fromName ?? "");
+    setSubject(mock.subject);
+    setBody(mock.body);
+  }
 
   async function handleSubmit() {
-    if (!email || !subject || !body) return;
+    if (!subject || !body) return;
     setSubmitting(true);
     try {
       const result = await submitCase({
         externalId: `web-${crypto.randomUUID()}`,
-        from: email,
+        from: CUSTOMER_EMAIL,
         fromName: name || undefined,
         subject,
         body,
       });
-      localStorage.setItem(STORAGE_KEY, email);
-      setLookupEmail(email);
       setSubject("");
       setBody("");
-      toast.success(`Case ${result.caseId} submitted`, {
-        description: "Our agent is on it - check the list below.",
-      });
-      await refreshCases(email);
-    } catch (error) {
-      toast.error(
-        error instanceof Error ? error.message : "Failed to submit case",
-      );
-    } finally {
-      setSubmitting(false);
-    }
-  }
-
-  async function sendMockEmail(mock: MockEmailPayload) {
-    setSubmitting(true);
-    try {
-      const result = await submitCase({
-        ...mock,
-        externalId: `${mock.externalId}-${crypto.randomUUID()}`,
-      });
-      localStorage.setItem(STORAGE_KEY, mock.from);
-      setEmail(mock.from);
-      setLookupEmail(mock.from);
-      toast.success(
-        `Case ${result.caseId} submitted as ${mock.fromName ?? mock.from}`,
-      );
-      await refreshCases(mock.from);
+      setLastCaseId(result.caseId);
+      setView("cases");
+      setNextStepsOpen(true);
+      await refreshCases();
     } catch (error) {
       toast.error(
         error instanceof Error ? error.message : "Failed to submit case",
@@ -203,23 +198,18 @@ export function Portal() {
   }
 
   return (
-    <div className="flex flex-col gap-8">
-      <section className="flex flex-wrap items-start justify-between gap-4">
-        <div className="flex flex-col gap-2">
-          <h1 className="text-3xl font-semibold tracking-tight">
-            Customer portal
-          </h1>
-          <p className="max-w-2xl text-muted-foreground">
-            Send a support request and track cases by email.
-          </p>
-        </div>
-        <Link to="/admin" className={buttonVariants({ variant: "outline" })}>
-          Open support admin
-          <ArrowRight data-icon="inline-end" />
-        </Link>
+    <div className="mx-auto flex max-w-3xl flex-col gap-8">
+      <section className="flex flex-col gap-2">
+        <h1 className="text-3xl font-semibold tracking-tight">
+          Customer portal
+        </h1>
+        <p className="max-w-2xl text-muted-foreground">
+          Send a message to support and watch the case status update as the AI
+          works on it.
+        </p>
       </section>
 
-      <div className="grid gap-8 lg:grid-cols-[1fr_1.1fr]">
+      {view === "form" ? (
         <div className="flex flex-col gap-6">
           <Card>
             <CardHeader>
@@ -242,16 +232,9 @@ export function Portal() {
                   </Field>
                   <Field>
                     <FieldLabel htmlFor="email">Email</FieldLabel>
-                    <Input
-                      id="email"
-                      type="email"
-                      required
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      placeholder="alex@example.com"
-                    />
+                    <Input id="email" value={CUSTOMER_EMAIL} disabled />
                     <FieldDescription>
-                      We use this to find your cases after you submit.
+                      This demo uses one fixed customer account.
                     </FieldDescription>
                   </Field>
                 </FieldGroup>
@@ -290,105 +273,120 @@ export function Portal() {
             </CardFooter>
           </Card>
 
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">Or try a sample email</CardTitle>
-              <CardDescription>Use a prepared example instead.</CardDescription>
-            </CardHeader>
-            <CardContent className="flex flex-col gap-4">
-              {mockEmails.map((mock) => (
-                <div
-                  key={mock.externalId}
-                  className="flex flex-col gap-3 rounded-lg border p-4 text-sm sm:flex-row sm:items-center sm:justify-between"
-                >
-                  <div>
-                    <p className="font-medium">{mock.subject}</p>
-                    <p className="text-muted-foreground">
-                      {mock.fromName ?? mock.from}
-                    </p>
-                  </div>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    disabled={submitting}
-                    onClick={() => sendMockEmail(mock)}
-                  >
-                    Send
-                  </Button>
-                </div>
-              ))}
-            </CardContent>
-          </Card>
+          {mockEmails.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">
+                  Or start from a sample message
+                </CardTitle>
+                <CardDescription>
+                  Pick one to fill in the form above - it won't send until you
+                  click "Send message".
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Accordion>
+                  {mockEmails.map((mock) => (
+                    <AccordionItem
+                      key={mock.externalId}
+                      value={mock.externalId}
+                    >
+                      <AccordionTrigger onClick={() => applySample(mock)}>
+                        <span className="flex flex-col gap-0.5">
+                          <span className="font-medium">{mock.subject}</span>
+                          <span className="text-xs font-normal text-muted-foreground">
+                            {mock.fromName ?? mock.from}
+                          </span>
+                        </span>
+                      </AccordionTrigger>
+                      <AccordionContent>
+                        <p className="text-muted-foreground">{mock.body}</p>
+                      </AccordionContent>
+                    </AccordionItem>
+                  ))}
+                </Accordion>
+              </CardContent>
+            </Card>
+          )}
         </div>
-
-        <div className="flex flex-col gap-4">
-          <Card>
-            <CardHeader>
+      ) : (
+        <Card>
+          <CardHeader className="flex flex-row items-start justify-between gap-4">
+            <div>
               <CardTitle>Your cases</CardTitle>
               <CardDescription>
-                Enter an email address to look up submitted cases.
+                Everything you've sent to support.
               </CardDescription>
-            </CardHeader>
-            <CardContent className="flex flex-col gap-4">
-              <FieldGroup>
-                <Field>
-                  <FieldLabel htmlFor="lookup">Case lookup email</FieldLabel>
-                  <Input
-                    id="lookup"
-                    type="email"
-                    value={lookupEmail}
-                    onChange={(e) => setLookupEmail(e.target.value)}
-                    placeholder="alex@example.com"
-                  />
-                </Field>
-              </FieldGroup>
-              <Separator />
-              {loadingCases && cases.length === 0 && (
-                <div className="flex flex-col gap-3">
-                  <Skeleton className="h-24 w-full" />
-                  <Skeleton className="h-24 w-full" />
-                </div>
-              )}
-              {!loadingCases && !lookupEmail && (
-                <Empty className="border">
-                  <EmptyHeader>
-                    <EmptyTitle>Look up your support history</EmptyTitle>
-                    <EmptyDescription>
-                      Enter the same email you used for your support request to
-                      load your cases.
-                    </EmptyDescription>
-                  </EmptyHeader>
-                </Empty>
-              )}
-              {!loadingCases && lookupEmail && cases.length === 0 && (
-                <Empty className="border">
-                  <EmptyHeader>
-                    <EmptyTitle>No cases found</EmptyTitle>
-                    <EmptyDescription>
-                      No cases were found for {lookupEmail} yet.
-                    </EmptyDescription>
-                  </EmptyHeader>
-                </Empty>
-              )}
+            </div>
+            <Button variant="outline" size="sm" onClick={() => setView("form")}>
+              <Plus data-icon="inline-start" />
+              New message
+            </Button>
+          </CardHeader>
+          <CardContent className="flex flex-col gap-4">
+            {loadingCases && cases.length === 0 && (
               <div className="flex flex-col gap-3">
-                {cases.map((c) => (
-                  <CaseCard
-                    key={c.id}
-                    supportCase={c}
-                    onCaseUpdated={(updated) =>
-                      setCases((prev) =>
-                        prev.map((existing) =>
-                          existing.id === updated.id ? updated : existing,
-                        ),
-                      )
-                    }
-                  />
-                ))}
+                <Skeleton className="h-24 w-full" />
+                <Skeleton className="h-24 w-full" />
               </div>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
+            )}
+            {!loadingCases && cases.length === 0 && (
+              <Empty className="border">
+                <EmptyHeader>
+                  <EmptyTitle>No cases yet</EmptyTitle>
+                  <EmptyDescription>
+                    Send a message to support to start a case.
+                  </EmptyDescription>
+                </EmptyHeader>
+              </Empty>
+            )}
+            <div className="flex flex-col gap-3">
+              {cases.map((c) => (
+                <CaseCard
+                  key={c.id}
+                  supportCase={c}
+                  onCaseUpdated={(updated) =>
+                    setCases((prev) =>
+                      prev.map((existing) =>
+                        existing.id === updated.id ? updated : existing,
+                      ),
+                    )
+                  }
+                />
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      <Dialog open={nextStepsOpen} onOpenChange={setNextStepsOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Your message is on its way</DialogTitle>
+            <DialogDescription>
+              An AI agent is now reading your message, checking your order and
+              the support policies, and drafting a response. Depending on what
+              it finds, it may resolve the case on its own or hand it off to a
+              human for approval.
+            </DialogDescription>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground">
+            Curious what that looks like from the other side? Open the admin
+            dashboard to watch this case get handled.
+          </p>
+          <DialogFooter showCloseButton>
+            <a
+              href={lastCaseId ? `/admin/${lastCaseId}` : "/admin"}
+              target="_blank"
+              rel="noreferrer"
+              className={buttonVariants()}
+            >
+              Open admin dashboard
+              <ArrowUpRight data-icon="inline-end" />
+            </a>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

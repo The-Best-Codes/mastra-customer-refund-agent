@@ -4,68 +4,41 @@ import {
   Card,
   CardContent,
   CardDescription,
+  CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
 import { ArrowRight } from "lucide-react";
 
-const ROLE_CARDS = [
-  {
-    title: "See the customer side",
-    description:
-      "Write a support message, send a sample case, and watch the case status update as the workflow progresses.",
-    href: "/portal",
-    cta: "Open customer portal",
-  },
-  {
-    title: "See the support admin side",
-    description:
-      "Review the queue, inspect case reasoning, and approve or reject refund recommendations.",
-    href: "/admin",
-    cta: "Open admin queue",
-  },
-  {
-    title: "See how it performs",
-    description:
-      "Containment, escalation, refund approvals, customer feedback, token cost, and tool health - all pulled from Mastra observability data.",
-    href: "/monitoring",
-    cta: "Open monitoring",
-  },
-];
-
 export function Landing() {
   return (
-    <div className="mx-auto max-w-5xl">
-      <section className="flex flex-col gap-6">
-        <div className="flex flex-col gap-3 text-center">
-          <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">
-            Explore the demo as a customer, as support, or from the numbers.
-          </h1>
-          <p className="mx-auto max-w-2xl text-muted-foreground">
-            The customer side lets you submit a support request. The admin side
-            lets you review cases and approve or reject refund recommendations.
-            The monitoring dashboard shows how the agent is performing across
-            every case.
+    <div className="flex min-h-[70vh] items-center justify-center">
+      <Card className="max-w-md">
+        <CardHeader>
+          <CardTitle>Welcome to the demo</CardTitle>
+          <CardDescription>
+            A quick look at an AI-assisted support workflow, built with Mastra.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="flex flex-col gap-3 text-sm text-muted-foreground">
+          <p>
+            This is an example of what your customer portal might look like.
+            Don't deploy this to production - use Zendesk, Front, or a similar
+            integration instead.
           </p>
-        </div>
-
-        <div className="grid gap-4 md:grid-cols-3">
-          {ROLE_CARDS.map((role) => (
-            <Card key={role.href}>
-              <CardHeader>
-                <CardTitle>{role.title}</CardTitle>
-                <CardDescription>{role.description}</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Link to={role.href} className={buttonVariants()}>
-                  {role.cta}
-                  <ArrowRight data-icon="inline-end" />
-                </Link>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      </section>
+          <p>
+            First, you'll submit a message to customer support. Then, you'll see
+            the admin dashboard, where you can see how the AI handles each case
+            and when it needs your help.
+          </p>
+        </CardContent>
+        <CardFooter>
+          <Link to="/portal" className={buttonVariants()}>
+            Let's go
+            <ArrowRight data-icon="inline-end" />
+          </Link>
+        </CardFooter>
+      </Card>
     </div>
   );
 }
