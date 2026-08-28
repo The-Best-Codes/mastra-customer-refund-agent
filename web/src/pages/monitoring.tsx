@@ -1,19 +1,41 @@
-import { useCallback, useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
-import { toast } from 'sonner';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Badge } from '@/components/ui/badge';
-import { Button, buttonVariants } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from '@/components/ui/empty';
-import { Progress, ProgressLabel } from '@/components/ui/progress';
-import { Separator } from '@/components/ui/separator';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Spinner } from '@/components/ui/spinner';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import { getMonitoringSummary } from '@/lib/api';
-import type { MonitoringSummary } from '@/lib/types';
+import { useCallback, useEffect, useState } from "react";
+import { Link } from "react-router-dom";
+import { toast } from "sonner";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Badge } from "@/components/ui/badge";
+import { Button, buttonVariants } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  Empty,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyTitle,
+} from "@/components/ui/empty";
+import { Progress, ProgressLabel } from "@/components/ui/progress";
+import { Separator } from "@/components/ui/separator";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Spinner } from "@/components/ui/spinner";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { getMonitoringSummary } from "@/lib/api";
+import type { MonitoringSummary } from "@/lib/types";
 import {
   AlertTriangle,
   ArrowRight,
@@ -25,25 +47,27 @@ import {
   ThumbsUp,
   Timer,
   Wallet,
-} from 'lucide-react';
+} from "lucide-react";
 
 function formatPercent(value: number | null): string {
-  return value === null ? '—' : `${(value * 100).toFixed(0)}%`;
+  return value === null ? "—" : `${(value * 100).toFixed(0)}%`;
 }
 
 function formatMinutes(value: number | null): string {
-  if (value === null) return '—';
-  if (value < 1) return '<1 min';
+  if (value === null) return "—";
+  if (value < 1) return "<1 min";
   if (value < 60) return `${value.toFixed(1)} min`;
   return `${(value / 60).toFixed(1)} hr`;
 }
 
 function formatMs(value: number): string {
-  return value < 1000 ? `${Math.round(value)} ms` : `${(value / 1000).toFixed(2)} s`;
+  return value < 1000
+    ? `${Math.round(value)} ms`
+    : `${(value / 1000).toFixed(2)} s`;
 }
 
 function formatUsd(value: number): string {
-  return value < 0.01 && value > 0 ? '<$0.01' : `$${value.toFixed(2)}`;
+  return value < 0.01 && value > 0 ? "<$0.01" : `$${value.toFixed(2)}`;
 }
 
 function RateCard({
@@ -94,7 +118,11 @@ export function Monitoring() {
       const result = await getMonitoringSummary();
       setSummary(result);
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Failed to load monitoring data');
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "Failed to load monitoring data",
+      );
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -114,18 +142,30 @@ export function Monitoring() {
     <div className="flex flex-col gap-6">
       <section className="flex flex-wrap items-start justify-between gap-4">
         <div className="flex flex-col gap-2">
-          <h1 className="text-3xl font-semibold tracking-tight">Agent monitoring</h1>
+          <h1 className="text-3xl font-semibold tracking-tight">
+            Agent monitoring
+          </h1>
           <p className="max-w-2xl text-muted-foreground">
-            Containment, escalation, refund approvals, customer feedback, and the token cost and
-            tool health data Mastra already tracks for every case.
+            Containment, escalation, refund approvals, customer feedback, and
+            the token cost and tool health data Mastra already tracks for every
+            case.
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" onClick={() => refresh()} disabled={refreshing}>
-            {refreshing ? <Spinner data-icon="inline-start" /> : <RefreshCcw data-icon="inline-start" />}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => refresh()}
+            disabled={refreshing}
+          >
+            {refreshing ? (
+              <Spinner data-icon="inline-start" />
+            ) : (
+              <RefreshCcw data-icon="inline-start" />
+            )}
             Refresh
           </Button>
-          <Link to="/admin" className={buttonVariants({ variant: 'outline' })}>
+          <Link to="/admin" className={buttonVariants({ variant: "outline" })}>
             Open support admin
             <ArrowRight data-icon="inline-end" />
           </Link>
@@ -145,8 +185,11 @@ export function Monitoring() {
           <EmptyHeader>
             <EmptyTitle>No cases yet</EmptyTitle>
             <EmptyDescription>
-              Send a sample case from the <Link to="/portal" className="underline">customer portal</Link> to start
-              populating this dashboard.
+              Send a sample case from the{" "}
+              <Link to="/portal" className="underline">
+                customer portal
+              </Link>{" "}
+              to start populating this dashboard.
             </EmptyDescription>
           </EmptyHeader>
         </Empty>
@@ -177,10 +220,14 @@ export function Monitoring() {
               tooltip="Of the refunds a human reviewer decided on, the share that were approved."
             />
             <RateCard
-              icon={summary.feedback.up >= summary.feedback.down ? ThumbsUp : ThumbsDown}
+              icon={
+                summary.feedback.up >= summary.feedback.down
+                  ? ThumbsUp
+                  : ThumbsDown
+              }
               title="Customer satisfaction"
               value={formatPercent(summary.feedback.satisfactionRate)}
-              description={`${summary.feedback.totalResponses} rating${summary.feedback.totalResponses === 1 ? '' : 's'} collected via the portal.`}
+              description={`${summary.feedback.totalResponses} rating${summary.feedback.totalResponses === 1 ? "" : "s"} collected via the portal.`}
               tooltip="Share of customers who said the resolution solved their issue, out of everyone who left feedback."
             />
           </section>
@@ -189,29 +236,45 @@ export function Monitoring() {
             <Card>
               <CardHeader>
                 <CardTitle>Case funnel</CardTitle>
-                <CardDescription>Where {summary.funnel.totalCases} case{summary.funnel.totalCases === 1 ? '' : 's'} ended up.</CardDescription>
+                <CardDescription>
+                  Where {summary.funnel.totalCases} case
+                  {summary.funnel.totalCases === 1 ? "" : "s"} ended up.
+                </CardDescription>
               </CardHeader>
               <CardContent className="flex flex-col gap-4 text-sm">
                 {(
                   [
-                    ['New / processing', summary.funnel.new + summary.funnel.processing],
-                    ['Waiting approval', summary.funnel.waitingApproval],
-                    ['Resolved', summary.funnel.resolved],
-                    ['Escalated', summary.funnel.escalated],
-                    ['Failed', summary.funnel.failed],
+                    [
+                      "New / processing",
+                      summary.funnel.new + summary.funnel.processing,
+                    ],
+                    ["Waiting approval", summary.funnel.waitingApproval],
+                    ["Resolved", summary.funnel.resolved],
+                    ["Escalated", summary.funnel.escalated],
+                    ["Failed", summary.funnel.failed],
                   ] as const
                 ).map(([label, count]) => (
-                  <Progress key={label} value={summary.funnel.totalCases > 0 ? (count / summary.funnel.totalCases) * 100 : 0}>
+                  <Progress
+                    key={label}
+                    value={
+                      summary.funnel.totalCases > 0
+                        ? (count / summary.funnel.totalCases) * 100
+                        : 0
+                    }
+                  >
                     <div className="flex w-full items-center justify-between">
                       <ProgressLabel>{label}</ProgressLabel>
-                      <span className="text-sm text-muted-foreground tabular-nums">{count}</span>
+                      <span className="text-sm text-muted-foreground tabular-nums">
+                        {count}
+                      </span>
                     </div>
                   </Progress>
                 ))}
                 <Separator />
                 <div className="flex items-center gap-2 text-muted-foreground">
                   <Timer className="size-4" />
-                  Avg. time to close: {formatMinutes(summary.funnel.avgResolutionMinutes)}
+                  Avg. time to close:{" "}
+                  {formatMinutes(summary.funnel.avgResolutionMinutes)}
                 </div>
               </CardContent>
             </Card>
@@ -219,30 +282,43 @@ export function Monitoring() {
             <Card>
               <CardHeader>
                 <CardTitle>Refunds</CardTitle>
-                <CardDescription>Human-in-the-loop outcomes for recommended refunds.</CardDescription>
+                <CardDescription>
+                  Human-in-the-loop outcomes for recommended refunds.
+                </CardDescription>
               </CardHeader>
               <CardContent className="grid grid-cols-2 gap-y-4 text-sm">
                 <div>
                   <p className="text-muted-foreground">Recommended</p>
-                  <p className="text-2xl font-semibold">{summary.refunds.recommended}</p>
+                  <p className="text-2xl font-semibold">
+                    {summary.refunds.recommended}
+                  </p>
                 </div>
                 <div>
                   <p className="text-muted-foreground">Approved</p>
-                  <p className="text-2xl font-semibold">{summary.refunds.approved}</p>
+                  <p className="text-2xl font-semibold">
+                    {summary.refunds.approved}
+                  </p>
                 </div>
                 <div>
                   <p className="text-muted-foreground">Rejected</p>
-                  <p className="text-2xl font-semibold">{summary.refunds.rejected}</p>
+                  <p className="text-2xl font-semibold">
+                    {summary.refunds.rejected}
+                  </p>
                 </div>
                 <div>
                   <p className="text-muted-foreground">Auto-escalated</p>
-                  <p className="text-2xl font-semibold">{summary.refunds.autoEscalated}</p>
+                  <p className="text-2xl font-semibold">
+                    {summary.refunds.autoEscalated}
+                  </p>
                 </div>
                 <div className="col-span-2">
                   <Separator className="mb-3" />
-                  <p className="text-muted-foreground">Total approved &amp; issued</p>
+                  <p className="text-muted-foreground">
+                    Total approved &amp; issued
+                  </p>
                   <p className="text-2xl font-semibold">
-                    {summary.refunds.totalApprovedAmount.toFixed(2)} {summary.refunds.currency}
+                    {summary.refunds.totalApprovedAmount.toFixed(2)}{" "}
+                    {summary.refunds.currency}
                   </p>
                 </div>
               </CardContent>
@@ -254,13 +330,16 @@ export function Monitoring() {
               <CardHeader>
                 <CardTitle>Token cost by agent</CardTitle>
                 <CardDescription>
-                  Derived from {summary.traces.tracesInspected} traced case{summary.traces.tracesInspected === 1 ? '' : 's'} -
-                  no extra instrumentation required.
+                  Derived from {summary.traces.tracesInspected} traced case
+                  {summary.traces.tracesInspected === 1 ? "" : "s"} - no extra
+                  instrumentation required.
                 </CardDescription>
               </CardHeader>
               <CardContent>
                 {summary.traces.byAgent.length === 0 ? (
-                  <p className="text-sm text-muted-foreground">No model calls traced yet.</p>
+                  <p className="text-sm text-muted-foreground">
+                    No model calls traced yet.
+                  </p>
                 ) : (
                   <>
                     <Table>
@@ -269,18 +348,25 @@ export function Monitoring() {
                           <TableHead>Agent</TableHead>
                           <TableHead>Calls</TableHead>
                           <TableHead>Tokens (in / out)</TableHead>
-                          <TableHead className="text-right">Est. cost</TableHead>
+                          <TableHead className="text-right">
+                            Est. cost
+                          </TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {summary.traces.byAgent.map(agent => (
+                        {summary.traces.byAgent.map((agent) => (
                           <TableRow key={agent.agent}>
-                            <TableCell className="font-medium">{agent.agent}</TableCell>
+                            <TableCell className="font-medium">
+                              {agent.agent}
+                            </TableCell>
                             <TableCell>{agent.calls}</TableCell>
                             <TableCell>
-                              {agent.inputTokens.toLocaleString()} / {agent.outputTokens.toLocaleString()}
+                              {agent.inputTokens.toLocaleString()} /{" "}
+                              {agent.outputTokens.toLocaleString()}
                             </TableCell>
-                            <TableCell className="text-right">{formatUsd(agent.estimatedCostUsd)}</TableCell>
+                            <TableCell className="text-right">
+                              {formatUsd(agent.estimatedCostUsd)}
+                            </TableCell>
                           </TableRow>
                         ))}
                       </TableBody>
@@ -290,7 +376,8 @@ export function Monitoring() {
                       <span>{formatUsd(summary.traces.estimatedCostUsd)}</span>
                     </div>
                     <p className="mt-1 text-xs text-muted-foreground">
-                      Cost is a rough estimate from public reference pricing, not your actual bill.
+                      Cost is a rough estimate from public reference pricing,
+                      not your actual bill.
                     </p>
                   </>
                 )}
@@ -300,11 +387,15 @@ export function Monitoring() {
             <Card>
               <CardHeader>
                 <CardTitle>Tool performance</CardTitle>
-                <CardDescription>Latency and error rate per tool, read straight from span data.</CardDescription>
+                <CardDescription>
+                  Latency and error rate per tool, read straight from span data.
+                </CardDescription>
               </CardHeader>
               <CardContent>
                 {summary.traces.tools.length === 0 ? (
-                  <p className="text-sm text-muted-foreground">No tool calls traced yet.</p>
+                  <p className="text-sm text-muted-foreground">
+                    No tool calls traced yet.
+                  </p>
                 ) : (
                   <>
                     <Table>
@@ -313,32 +404,44 @@ export function Monitoring() {
                           <TableHead>Tool</TableHead>
                           <TableHead>Calls</TableHead>
                           <TableHead>Avg / max latency</TableHead>
-                          <TableHead className="text-right">Error rate</TableHead>
+                          <TableHead className="text-right">
+                            Error rate
+                          </TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {summary.traces.tools.map(tool => (
+                        {summary.traces.tools.map((tool) => (
                           <TableRow key={tool.tool}>
                             <TableCell className="font-medium">
                               <div className="flex items-center gap-1.5">
                                 {tool.tool}
-                                {summary.traces.slowestTool?.tool === tool.tool && (
+                                {summary.traces.slowestTool?.tool ===
+                                  tool.tool && (
                                   <Badge variant="secondary" className="gap-1">
                                     <Timer data-icon="inline-start" /> slowest
                                   </Badge>
                                 )}
-                                {summary.traces.leastReliableTool?.tool === tool.tool && tool.errors > 0 && (
-                                  <Badge variant="destructive" className="gap-1">
-                                    <AlertTriangle data-icon="inline-start" /> flaky
-                                  </Badge>
-                                )}
+                                {summary.traces.leastReliableTool?.tool ===
+                                  tool.tool &&
+                                  tool.errors > 0 && (
+                                    <Badge
+                                      variant="destructive"
+                                      className="gap-1"
+                                    >
+                                      <AlertTriangle data-icon="inline-start" />{" "}
+                                      flaky
+                                    </Badge>
+                                  )}
                               </div>
                             </TableCell>
                             <TableCell>{tool.calls}</TableCell>
                             <TableCell>
-                              {formatMs(tool.avgDurationMs)} / {formatMs(tool.maxDurationMs)}
+                              {formatMs(tool.avgDurationMs)} /{" "}
+                              {formatMs(tool.maxDurationMs)}
                             </TableCell>
-                            <TableCell className="text-right">{formatPercent(tool.errorRate)}</TableCell>
+                            <TableCell className="text-right">
+                              {formatPercent(tool.errorRate)}
+                            </TableCell>
                           </TableRow>
                         ))}
                       </TableBody>
@@ -352,12 +455,18 @@ export function Monitoring() {
           {summary.traces.observabilityUnavailable && (
             <Alert variant="destructive">
               <AlertTriangle />
-              <AlertTitle>Observability storage doesn't support trace lookups</AlertTitle>
+              <AlertTitle>
+                Observability storage doesn't support trace lookups
+              </AlertTitle>
               <AlertDescription>
-                Token cost and tool stats need a storage provider whose observability domain supports
+                Token cost and tool stats need a storage provider whose
+                observability domain supports
                 <code className="mx-1 rounded bg-muted px-1">getTrace</code>
                 (LibSQL, Postgres, and Mastra Platform all do). Configure one in
-                <code className="mx-1 rounded bg-muted px-1">src/mastra/index.ts</code>.
+                <code className="mx-1 rounded bg-muted px-1">
+                  src/mastra/index.ts
+                </code>
+                .
               </AlertDescription>
             </Alert>
           )}
@@ -365,23 +474,45 @@ export function Monitoring() {
           <Card>
             <CardHeader>
               <CardTitle>Recent customer feedback</CardTitle>
-              <CardDescription>Collected from the customer portal after a case closes.</CardDescription>
+              <CardDescription>
+                Collected from the customer portal after a case closes.
+              </CardDescription>
             </CardHeader>
             <CardContent>
               {summary.feedback.recent.length === 0 ? (
-                <p className="text-sm text-muted-foreground">No feedback submitted yet.</p>
+                <p className="text-sm text-muted-foreground">
+                  No feedback submitted yet.
+                </p>
               ) : (
                 <div className="flex flex-col gap-3">
-                  {summary.feedback.recent.map(entry => (
-                    <div key={entry.caseId} className="flex items-start justify-between gap-3 border-b pb-3 text-sm last:border-0 last:pb-0">
+                  {summary.feedback.recent.map((entry) => (
+                    <div
+                      key={entry.caseId}
+                      className="flex items-start justify-between gap-3 border-b pb-3 text-sm last:border-0 last:pb-0"
+                    >
                       <div>
                         <p className="font-medium">{entry.subject}</p>
-                        {entry.comment && <p className="text-muted-foreground">{entry.comment}</p>}
-                        <p className="text-xs text-muted-foreground">{new Date(entry.submittedAt).toLocaleString()}</p>
+                        {entry.comment && (
+                          <p className="text-muted-foreground">
+                            {entry.comment}
+                          </p>
+                        )}
+                        <p className="text-xs text-muted-foreground">
+                          {new Date(entry.submittedAt).toLocaleString()}
+                        </p>
                       </div>
-                      <Badge variant={entry.rating === 'up' ? 'default' : 'destructive'} className="gap-1">
-                        {entry.rating === 'up' ? <ThumbsUp data-icon="inline-start" /> : <ThumbsDown data-icon="inline-start" />}
-                        {entry.rating === 'up' ? 'Resolved' : 'Not resolved'}
+                      <Badge
+                        variant={
+                          entry.rating === "up" ? "default" : "destructive"
+                        }
+                        className="gap-1"
+                      >
+                        {entry.rating === "up" ? (
+                          <ThumbsUp data-icon="inline-start" />
+                        ) : (
+                          <ThumbsDown data-icon="inline-start" />
+                        )}
+                        {entry.rating === "up" ? "Resolved" : "Not resolved"}
                       </Badge>
                     </div>
                   ))}
@@ -390,7 +521,9 @@ export function Monitoring() {
             </CardContent>
           </Card>
 
-          <p className="text-xs text-muted-foreground">Last updated {new Date(summary.generatedAt).toLocaleString()}</p>
+          <p className="text-xs text-muted-foreground">
+            Last updated {new Date(summary.generatedAt).toLocaleString()}
+          </p>
         </>
       )}
     </div>

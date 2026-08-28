@@ -1,22 +1,39 @@
-import { useCallback, useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
-import { toast } from 'sonner';
-import { Button, buttonVariants } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from '@/components/ui/empty';
-import { Field, FieldDescription, FieldGroup, FieldLabel } from '@/components/ui/field';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Separator } from '@/components/ui/separator';
-import { Skeleton } from '@/components/ui/skeleton';
-import { StatusBadge } from '@/components/status-badge';
-import { CaseFeedback } from '@/components/portal/case-feedback';
-import { isCaseActive, listCases, listMockEmails, submitCase } from '@/lib/api';
-import type { MockEmailPayload, SupportCase } from '@/lib/types';
-import { ArrowRight, Send } from 'lucide-react';
-import { Spinner } from '@/components/ui/spinner';
+import { useCallback, useEffect, useState } from "react";
+import { Link } from "react-router-dom";
+import { toast } from "sonner";
+import { Button, buttonVariants } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  Empty,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyTitle,
+} from "@/components/ui/empty";
+import {
+  Field,
+  FieldDescription,
+  FieldGroup,
+  FieldLabel,
+} from "@/components/ui/field";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Separator } from "@/components/ui/separator";
+import { Skeleton } from "@/components/ui/skeleton";
+import { StatusBadge } from "@/components/status-badge";
+import { CaseFeedback } from "@/components/portal/case-feedback";
+import { isCaseActive, listCases, listMockEmails, submitCase } from "@/lib/api";
+import type { MockEmailPayload, SupportCase } from "@/lib/types";
+import { ArrowRight, Send } from "lucide-react";
+import { Spinner } from "@/components/ui/spinner";
 
-const STORAGE_KEY = 'support-demo:customer-email';
+const STORAGE_KEY = "support-demo:customer-email";
 
 function CaseCard({
   supportCase,
@@ -25,8 +42,11 @@ function CaseCard({
   supportCase: SupportCase;
   onCaseUpdated: (updated: SupportCase) => void;
 }) {
-  const lastAgentMessage = [...supportCase.messages].reverse().find(m => m.author === 'agent');
-  const isClosed = supportCase.status === 'resolved' || supportCase.status === 'escalated';
+  const lastAgentMessage = [...supportCase.messages]
+    .reverse()
+    .find((m) => m.author === "agent");
+  const isClosed =
+    supportCase.status === "resolved" || supportCase.status === "escalated";
 
   return (
     <Card>
@@ -35,45 +55,62 @@ function CaseCard({
           <div>
             <CardTitle className="text-base">{supportCase.subject}</CardTitle>
             <CardDescription>
-              Opened {new Date(supportCase.createdAt).toLocaleString()} · Case {supportCase.id}
+              Opened {new Date(supportCase.createdAt).toLocaleString()} · Case{" "}
+              {supportCase.id}
             </CardDescription>
           </div>
           <StatusBadge status={supportCase.status} />
         </div>
       </CardHeader>
       <CardContent className="flex flex-col gap-3 text-sm">
-        {supportCase.messages.map(message => (
-          <div key={message.id} className={message.author === 'customer' ? 'text-foreground' : 'text-muted-foreground'}>
-            <span className="font-medium">{message.author === 'customer' ? 'You' : 'Support'}: </span>
+        {supportCase.messages.map((message) => (
+          <div
+            key={message.id}
+            className={
+              message.author === "customer"
+                ? "text-foreground"
+                : "text-muted-foreground"
+            }
+          >
+            <span className="font-medium">
+              {message.author === "customer" ? "You" : "Support"}:{" "}
+            </span>
             {message.body}
           </div>
         ))}
         {isCaseActive(supportCase.status) && !lastAgentMessage && (
-          <p className="text-muted-foreground">The case is still being processed.</p>
-        )}
-        {supportCase.status === 'waiting_approval' && (
-          <p className="text-muted-foreground">A refund was recommended and is waiting for approval.</p>
-        )}
-        {supportCase.refundResult?.status === 'executed' && (
           <p className="text-muted-foreground">
-            Refund of {supportCase.refundResult.amount} {supportCase.refundResult.currency} issued.
+            The case is still being processed.
           </p>
         )}
-        {isClosed && <CaseFeedback supportCase={supportCase} onSubmitted={onCaseUpdated} />}
+        {supportCase.status === "waiting_approval" && (
+          <p className="text-muted-foreground">
+            A refund was recommended and is waiting for approval.
+          </p>
+        )}
+        {supportCase.refundResult?.status === "executed" && (
+          <p className="text-muted-foreground">
+            Refund of {supportCase.refundResult.amount}{" "}
+            {supportCase.refundResult.currency} issued.
+          </p>
+        )}
+        {isClosed && (
+          <CaseFeedback supportCase={supportCase} onSubmitted={onCaseUpdated} />
+        )}
       </CardContent>
     </Card>
   );
 }
 
 export function Portal() {
-  const [email, setEmail] = useState('');
-  const [name, setName] = useState('');
-  const [subject, setSubject] = useState('');
-  const [body, setBody] = useState('');
+  const [email, setEmail] = useState("");
+  const [name, setName] = useState("");
+  const [subject, setSubject] = useState("");
+  const [body, setBody] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [mockEmails, setMockEmails] = useState<MockEmailPayload[]>([]);
   const [cases, setCases] = useState<SupportCase[]>([]);
-  const [lookupEmail, setLookupEmail] = useState('');
+  const [lookupEmail, setLookupEmail] = useState("");
   const [loadingCases, setLoadingCases] = useState(false);
 
   useEffect(() => {
@@ -83,7 +120,7 @@ export function Portal() {
       setLookupEmail(saved);
     }
     listMockEmails()
-      .then(res => setMockEmails(res.emails))
+      .then((res) => setMockEmails(res.emails))
       .catch(() => {});
   }, []);
 
@@ -109,13 +146,12 @@ export function Portal() {
 
   // Poll while any of the customer's cases are still moving through the pipeline.
   useEffect(() => {
-    if (!lookupEmail || !cases.some(c => isCaseActive(c.status))) return;
+    if (!lookupEmail || !cases.some((c) => isCaseActive(c.status))) return;
     const interval = setInterval(() => refreshCases(lookupEmail), 4000);
     return () => clearInterval(interval);
   }, [lookupEmail, cases, refreshCases]);
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
+  async function handleSubmit() {
     if (!email || !subject || !body) return;
     setSubmitting(true);
     try {
@@ -128,12 +164,16 @@ export function Portal() {
       });
       localStorage.setItem(STORAGE_KEY, email);
       setLookupEmail(email);
-      setSubject('');
-      setBody('');
-      toast.success(`Case ${result.caseId} submitted`, { description: 'Our agent is on it - check the list below.' });
+      setSubject("");
+      setBody("");
+      toast.success(`Case ${result.caseId} submitted`, {
+        description: "Our agent is on it - check the list below.",
+      });
       await refreshCases(email);
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Failed to submit case');
+      toast.error(
+        error instanceof Error ? error.message : "Failed to submit case",
+      );
     } finally {
       setSubmitting(false);
     }
@@ -142,14 +182,21 @@ export function Portal() {
   async function sendMockEmail(mock: MockEmailPayload) {
     setSubmitting(true);
     try {
-      const result = await submitCase({ ...mock, externalId: `${mock.externalId}-${crypto.randomUUID()}` });
+      const result = await submitCase({
+        ...mock,
+        externalId: `${mock.externalId}-${crypto.randomUUID()}`,
+      });
       localStorage.setItem(STORAGE_KEY, mock.from);
       setEmail(mock.from);
       setLookupEmail(mock.from);
-      toast.success(`Case ${result.caseId} submitted as ${mock.fromName ?? mock.from}`);
+      toast.success(
+        `Case ${result.caseId} submitted as ${mock.fromName ?? mock.from}`,
+      );
       await refreshCases(mock.from);
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Failed to submit case');
+      toast.error(
+        error instanceof Error ? error.message : "Failed to submit case",
+      );
     } finally {
       setSubmitting(false);
     }
@@ -159,12 +206,14 @@ export function Portal() {
     <div className="flex flex-col gap-8">
       <section className="flex flex-wrap items-start justify-between gap-4">
         <div className="flex flex-col gap-2">
-          <h1 className="text-3xl font-semibold tracking-tight">Customer portal</h1>
+          <h1 className="text-3xl font-semibold tracking-tight">
+            Customer portal
+          </h1>
           <p className="max-w-2xl text-muted-foreground">
             Send a support request and track cases by email.
           </p>
         </div>
-        <Link to="/admin" className={buttonVariants({ variant: 'outline' })}>
+        <Link to="/admin" className={buttonVariants({ variant: "outline" })}>
           Open support admin
           <ArrowRight data-icon="inline-end" />
         </Link>
@@ -175,46 +224,70 @@ export function Portal() {
           <Card>
             <CardHeader>
               <CardTitle>Contact support</CardTitle>
-              <CardDescription>Send a message to create a case.</CardDescription>
+              <CardDescription>
+                Send a message to create a case.
+              </CardDescription>
             </CardHeader>
-            <form onSubmit={handleSubmit}>
-              <CardContent>
-                <FieldGroup>
-                  <FieldGroup className="grid gap-4 sm:grid-cols-2">
-                    <Field>
-                      <FieldLabel htmlFor="name">Your name</FieldLabel>
-                      <Input id="name" value={name} onChange={e => setName(e.target.value)} placeholder="Alex Kim" />
-                    </Field>
-                    <Field>
-                      <FieldLabel htmlFor="email">Email</FieldLabel>
-                      <Input
-                        id="email"
-                        type="email"
-                        required
-                        value={email}
-                        onChange={e => setEmail(e.target.value)}
-                        placeholder="alex@example.com"
-                      />
-                      <FieldDescription>We use this to find your cases after you submit.</FieldDescription>
-                    </Field>
-                  </FieldGroup>
+            <CardContent>
+              <FieldGroup>
+                <FieldGroup className="grid gap-4 sm:grid-cols-2">
                   <Field>
-                    <FieldLabel htmlFor="subject">Subject</FieldLabel>
-                    <Input id="subject" required value={subject} onChange={e => setSubject(e.target.value)} placeholder="I was charged twice" />
+                    <FieldLabel htmlFor="name">Your name</FieldLabel>
+                    <Input
+                      id="name"
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                      placeholder="Alex Kim"
+                    />
                   </Field>
                   <Field>
-                    <FieldLabel htmlFor="body">Message</FieldLabel>
-                    <Textarea id="body" required rows={5} value={body} onChange={e => setBody(e.target.value)} placeholder="Tell us what happened" />
+                    <FieldLabel htmlFor="email">Email</FieldLabel>
+                    <Input
+                      id="email"
+                      type="email"
+                      required
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      placeholder="alex@example.com"
+                    />
+                    <FieldDescription>
+                      We use this to find your cases after you submit.
+                    </FieldDescription>
                   </Field>
                 </FieldGroup>
-              </CardContent>
-              <CardFooter>
-                <Button type="submit" disabled={submitting}>
-                  {submitting ? <Spinner data-icon="inline-start" /> : <Send data-icon="inline-start" />}
-                  Send message
-                </Button>
-              </CardFooter>
-            </form>
+                <Field>
+                  <FieldLabel htmlFor="subject">Subject</FieldLabel>
+                  <Input
+                    id="subject"
+                    required
+                    value={subject}
+                    onChange={(e) => setSubject(e.target.value)}
+                    placeholder="I was charged twice"
+                  />
+                </Field>
+                <Field>
+                  <FieldLabel htmlFor="body">Message</FieldLabel>
+                  <Textarea
+                    id="body"
+                    required
+                    rows={5}
+                    value={body}
+                    onChange={(e) => setBody(e.target.value)}
+                    placeholder="Tell us what happened"
+                  />
+                </Field>
+              </FieldGroup>
+            </CardContent>
+            <CardFooter>
+              <Button onClick={handleSubmit} disabled={submitting}>
+                {submitting ? (
+                  <Spinner data-icon="inline-start" />
+                ) : (
+                  <Send data-icon="inline-start" />
+                )}
+                Send message
+              </Button>
+            </CardFooter>
           </Card>
 
           <Card>
@@ -223,13 +296,23 @@ export function Portal() {
               <CardDescription>Use a prepared example instead.</CardDescription>
             </CardHeader>
             <CardContent className="flex flex-col gap-4">
-              {mockEmails.map(mock => (
-                <div key={mock.externalId} className="flex flex-col gap-3 rounded-lg border p-4 text-sm sm:flex-row sm:items-center sm:justify-between">
+              {mockEmails.map((mock) => (
+                <div
+                  key={mock.externalId}
+                  className="flex flex-col gap-3 rounded-lg border p-4 text-sm sm:flex-row sm:items-center sm:justify-between"
+                >
                   <div>
                     <p className="font-medium">{mock.subject}</p>
-                    <p className="text-muted-foreground">{mock.fromName ?? mock.from}</p>
+                    <p className="text-muted-foreground">
+                      {mock.fromName ?? mock.from}
+                    </p>
                   </div>
-                  <Button size="sm" variant="outline" disabled={submitting} onClick={() => sendMockEmail(mock)}>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    disabled={submitting}
+                    onClick={() => sendMockEmail(mock)}
+                  >
                     Send
                   </Button>
                 </div>
@@ -242,7 +325,9 @@ export function Portal() {
           <Card>
             <CardHeader>
               <CardTitle>Your cases</CardTitle>
-              <CardDescription>Enter an email address to look up submitted cases.</CardDescription>
+              <CardDescription>
+                Enter an email address to look up submitted cases.
+              </CardDescription>
             </CardHeader>
             <CardContent className="flex flex-col gap-4">
               <FieldGroup>
@@ -252,7 +337,7 @@ export function Portal() {
                     id="lookup"
                     type="email"
                     value={lookupEmail}
-                    onChange={e => setLookupEmail(e.target.value)}
+                    onChange={(e) => setLookupEmail(e.target.value)}
                     placeholder="alex@example.com"
                   />
                 </Field>
@@ -268,7 +353,10 @@ export function Portal() {
                 <Empty className="border">
                   <EmptyHeader>
                     <EmptyTitle>Look up your support history</EmptyTitle>
-                    <EmptyDescription>Enter the same email you used for your support request to load your cases.</EmptyDescription>
+                    <EmptyDescription>
+                      Enter the same email you used for your support request to
+                      load your cases.
+                    </EmptyDescription>
                   </EmptyHeader>
                 </Empty>
               )}
@@ -276,16 +364,24 @@ export function Portal() {
                 <Empty className="border">
                   <EmptyHeader>
                     <EmptyTitle>No cases found</EmptyTitle>
-                    <EmptyDescription>No cases were found for {lookupEmail} yet.</EmptyDescription>
+                    <EmptyDescription>
+                      No cases were found for {lookupEmail} yet.
+                    </EmptyDescription>
                   </EmptyHeader>
                 </Empty>
               )}
               <div className="flex flex-col gap-3">
-                {cases.map(c => (
+                {cases.map((c) => (
                   <CaseCard
                     key={c.id}
                     supportCase={c}
-                    onCaseUpdated={updated => setCases(prev => prev.map(existing => (existing.id === updated.id ? updated : existing)))}
+                    onCaseUpdated={(updated) =>
+                      setCases((prev) =>
+                        prev.map((existing) =>
+                          existing.id === updated.id ? updated : existing,
+                        ),
+                      )
+                    }
                   />
                 ))}
               </div>

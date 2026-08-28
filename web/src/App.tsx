@@ -1,9 +1,9 @@
-import { Route, Routes } from 'react-router-dom';
-import { NavBar } from '@/components/nav-bar';
-import { Landing } from '@/pages/landing';
-import { Portal } from '@/pages/portal';
-import { Admin } from '@/pages/admin';
-import { Monitoring } from '@/pages/monitoring';
+import { Route, Routes } from "react-router-dom";
+import { NavBar } from "@/components/nav-bar";
+import { Landing } from "@/pages/landing";
+import { Portal } from "@/pages/portal";
+import { Admin } from "@/pages/admin";
+import { Monitoring } from "@/pages/monitoring";
 
 function App() {
   return (

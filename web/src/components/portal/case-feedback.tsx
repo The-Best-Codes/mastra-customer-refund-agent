@@ -1,11 +1,11 @@
-import { useState } from 'react';
-import { toast } from 'sonner';
-import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
-import { submitCaseFeedback } from '@/lib/api';
-import type { SupportCase } from '@/lib/types';
-import { Send, ThumbsDown, ThumbsUp } from 'lucide-react';
-import { Spinner } from '@/components/ui/spinner';
+import { useState } from "react";
+import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import { submitCaseFeedback } from "@/lib/api";
+import type { SupportCase } from "@/lib/types";
+import { Send, ThumbsDown, ThumbsUp } from "lucide-react";
+import { Spinner } from "@/components/ui/spinner";
 
 /**
  * Lets the customer rate the resolution once a case is closed. Feeds the "customer feedback"
@@ -19,12 +19,13 @@ export function CaseFeedback({
   supportCase: SupportCase;
   onSubmitted: (updated: SupportCase) => void;
 }) {
-  const [choosing, setChoosing] = useState<'up' | 'down' | null>(null);
-  const [comment, setComment] = useState('');
+  const [choosing, setChoosing] = useState<"up" | "down" | null>(null);
+  const [comment, setComment] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
   if (supportCase.feedback) {
-    const RatingIcon = supportCase.feedback.rating === 'up' ? ThumbsUp : ThumbsDown;
+    const RatingIcon =
+      supportCase.feedback.rating === "up" ? ThumbsUp : ThumbsDown;
     return (
       <p className="flex items-center gap-1.5 border-t pt-3 text-xs text-muted-foreground">
         <RatingIcon className="size-3.5" />
@@ -33,14 +34,20 @@ export function CaseFeedback({
     );
   }
 
-  async function submit(rating: 'up' | 'down') {
+  async function submit(rating: "up" | "down") {
     setSubmitting(true);
     try {
-      const updated = await submitCaseFeedback(supportCase.id, rating, comment || undefined);
+      const updated = await submitCaseFeedback(
+        supportCase.id,
+        rating,
+        comment || undefined,
+      );
       onSubmitted(updated);
-      toast.success('Thanks for the feedback!');
+      toast.success("Thanks for the feedback!");
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Failed to submit feedback');
+      toast.error(
+        error instanceof Error ? error.message : "Failed to submit feedback",
+      );
     } finally {
       setSubmitting(false);
     }
@@ -48,12 +55,14 @@ export function CaseFeedback({
 
   return (
     <div className="flex flex-col gap-2 border-t pt-3">
-      <p className="text-xs font-medium text-muted-foreground">Did this resolve your issue?</p>
+      <p className="text-xs font-medium text-muted-foreground">
+        Did this resolve your issue?
+      </p>
       <div className="flex items-center gap-2">
         <Button
           size="sm"
-          variant={choosing === 'up' ? 'default' : 'outline'}
-          onClick={() => setChoosing('up')}
+          variant={choosing === "up" ? "default" : "outline"}
+          onClick={() => setChoosing("up")}
           disabled={submitting}
         >
           <ThumbsUp data-icon="inline-start" />
@@ -61,8 +70,8 @@ export function CaseFeedback({
         </Button>
         <Button
           size="sm"
-          variant={choosing === 'down' ? 'default' : 'outline'}
-          onClick={() => setChoosing('down')}
+          variant={choosing === "down" ? "default" : "outline"}
+          onClick={() => setChoosing("down")}
           disabled={submitting}
         >
           <ThumbsDown data-icon="inline-start" />
@@ -74,11 +83,20 @@ export function CaseFeedback({
           <Textarea
             placeholder="Anything you want to add? (optional)"
             value={comment}
-            onChange={e => setComment(e.target.value)}
+            onChange={(e) => setComment(e.target.value)}
             rows={2}
           />
-          <Button size="sm" onClick={() => submit(choosing)} disabled={submitting} className="self-start">
-            {submitting ? <Spinner data-icon="inline-start" /> : <Send data-icon="inline-start" />}
+          <Button
+            size="sm"
+            onClick={() => submit(choosing)}
+            disabled={submitting}
+            className="self-start"
+          >
+            {submitting ? (
+              <Spinner data-icon="inline-start" />
+            ) : (
+              <Send data-icon="inline-start" />
+            )}
             Send feedback
           </Button>
         </div>

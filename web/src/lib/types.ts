@@ -2,11 +2,17 @@
 // TS types (not shared/imported) since the web app is a separate deployable
 // package from the Mastra app.
 
-export type CaseStatus = 'new' | 'processing' | 'waiting_approval' | 'resolved' | 'escalated' | 'failed';
+export type CaseStatus =
+  | "new"
+  | "processing"
+  | "waiting_approval"
+  | "resolved"
+  | "escalated"
+  | "failed";
 
 export interface CaseMessage {
   id: string;
-  author: 'customer' | 'agent' | 'internal';
+  author: "customer" | "agent" | "internal";
   authorName?: string;
   body: string;
   createdAt: string;
@@ -14,15 +20,15 @@ export interface CaseMessage {
 
 export interface TriageResult {
   intent:
-    | 'refund_request'
-    | 'duplicate_charge'
-    | 'order_status'
-    | 'cancellation'
-    | 'damaged_item'
-    | 'account_issue'
-    | 'other';
-  urgency: 'low' | 'normal' | 'high' | 'critical';
-  sentiment: 'positive' | 'neutral' | 'negative' | 'angry';
+    | "refund_request"
+    | "duplicate_charge"
+    | "order_status"
+    | "cancellation"
+    | "damaged_item"
+    | "account_issue"
+    | "other";
+  urgency: "low" | "normal" | "high" | "critical";
+  sentiment: "positive" | "neutral" | "negative" | "angry";
   requiresHumanReview: boolean;
   confidence: number;
   rationale: string;
@@ -43,7 +49,7 @@ export interface OrderLookup {
     product: string;
     amount: number;
     currency: string;
-    status: 'fulfilled' | 'shipped' | 'processing' | 'cancelled' | 'refunded';
+    status: "fulfilled" | "shipped" | "processing" | "cancelled" | "refunded";
     chargeCount: number;
     placedAt: string;
   };
@@ -57,7 +63,7 @@ export interface SubscriptionLookup {
     plan: string;
     amount: number;
     currency: string;
-    status: 'active' | 'cancelled' | 'past_due';
+    status: "active" | "cancelled" | "past_due";
     renewsAt: string;
   };
 }
@@ -95,13 +101,13 @@ export interface RefundResult {
   orderId: string;
   amount: number;
   currency: string;
-  status: 'executed' | 'skipped';
+  status: "executed" | "skipped";
   idempotencyKey: string;
   executedAt: string;
 }
 
 export interface CaseFeedback {
-  rating: 'up' | 'down';
+  rating: "up" | "down";
   comment?: string;
   submittedAt: string;
 }
@@ -109,7 +115,7 @@ export interface CaseFeedback {
 export interface SupportCase {
   id: string;
   externalId: string;
-  source: 'mock-email' | 'zendesk' | 'front' | 'chat';
+  source: "mock-email" | "zendesk" | "front" | "chat";
   customer: { email: string; name?: string };
   subject: string;
   messages: CaseMessage[];
@@ -170,7 +176,13 @@ export interface FeedbackMetrics {
   up: number;
   down: number;
   satisfactionRate: number | null;
-  recent: Array<{ caseId: string; subject: string; rating: 'up' | 'down'; comment?: string; submittedAt: string }>;
+  recent: Array<{
+    caseId: string;
+    subject: string;
+    rating: "up" | "down";
+    comment?: string;
+    submittedAt: string;
+  }>;
 }
 
 export interface ToolStat {

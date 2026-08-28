@@ -1,13 +1,13 @@
-import { NavLink } from 'react-router-dom';
-import { buttonVariants } from '@/components/ui/button';
-import { cn } from '@/lib/utils';
-import { LifeBuoy } from 'lucide-react';
+import { NavLink } from "react-router-dom";
+import { buttonVariants } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
+import { LifeBuoy } from "lucide-react";
 
 const links = [
-  { to: '/', label: 'Overview', end: true },
-  { to: '/portal', label: 'Customer portal' },
-  { to: '/admin', label: 'Support admin' },
-  { to: '/monitoring', label: 'Monitoring' },
+  { to: "/", label: "Overview", end: true },
+  { to: "/portal", label: "Customer portal" },
+  { to: "/admin", label: "Support admin" },
+  { to: "/monitoring", label: "Monitoring" },
 ];
 
 export function NavBar() {
@@ -18,19 +18,24 @@ export function NavBar() {
           <LifeBuoy className="text-primary" />
           <div className="flex flex-col">
             <span>Support Refund Agent</span>
-            <span className="text-xs font-normal text-muted-foreground">Mastra demo</span>
+            <span className="text-xs font-normal text-muted-foreground">
+              Mastra demo
+            </span>
           </div>
         </div>
         <nav className="flex flex-wrap items-center gap-2">
-          {links.map(link => (
+          {links.map((link) => (
             <NavLink
               key={link.to}
               to={link.to}
               end={link.end}
               className={({ isActive }) =>
                 cn(
-                  buttonVariants({ variant: isActive ? 'secondary' : 'ghost', size: 'sm' }),
-                  'justify-start',
+                  buttonVariants({
+                    variant: isActive ? "secondary" : "ghost",
+                    size: "sm",
+                  }),
+                  "justify-start",
                 )
               }
             >
