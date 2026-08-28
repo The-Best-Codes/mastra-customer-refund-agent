@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -14,7 +13,6 @@ import {
   FieldGroup,
   FieldLabel,
 } from "@/components/ui/field";
-import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { CheckCircle2, XCircle } from "lucide-react";
@@ -54,48 +52,41 @@ export function ApprovalCard({
         </CardDescription>
       </CardHeader>
       <CardContent className="flex flex-col gap-4">
-        <Alert>
-          <CheckCircle2 />
-          <AlertTitle>Human review is required</AlertTitle>
-          <AlertDescription>
-            The workflow paused after drafting a refund recommendation. Review
-            the amount, customer reply, and note before you continue.
-          </AlertDescription>
-        </Alert>
-        <div className="grid gap-4 text-sm sm:grid-cols-3">
-          <div className="flex flex-col gap-1">
+        <div className="flex flex-wrap gap-4 text-sm">
+          <div>
             <p className="text-muted-foreground">Amount</p>
             <p className="font-medium">
               {draft.refundAmount} {draft.refundCurrency}
             </p>
           </div>
-          <div className="flex flex-col gap-1">
+          <div>
             <p className="text-muted-foreground">Order</p>
             <p className="font-medium">
               {supportCase.orderLookup?.order?.orderId ?? "Not found"}
             </p>
           </div>
-          <div className="flex flex-col gap-1">
+          <div>
             <p className="text-muted-foreground">Reason</p>
             <p className="font-medium">{draft.refundReason}</p>
           </div>
         </div>
-        <Separator />
+
         <div>
-          <p className="mb-2 text-sm font-medium">Drafted customer reply</p>
+          <p className="mb-1 text-sm font-medium">Drafted customer reply</p>
           <p className="rounded-md border bg-background p-3 text-sm whitespace-pre-wrap">
             {draft.draftResponse}
           </p>
+          {draft.citedSources.length > 0 && (
+            <div className="mt-2 flex flex-wrap gap-1.5">
+              {draft.citedSources.map((source) => (
+                <Badge key={source} variant="outline">
+                  {source}
+                </Badge>
+              ))}
+            </div>
+          )}
         </div>
-        {draft.citedSources.length > 0 && (
-          <div className="flex flex-wrap gap-1.5">
-            {draft.citedSources.map((source) => (
-              <Badge key={source} variant="outline">
-                {source}
-              </Badge>
-            ))}
-          </div>
-        )}
+
         <FieldGroup>
           <Field>
             <FieldLabel htmlFor="approval-note">Internal note</FieldLabel>
@@ -104,7 +95,7 @@ export function ApprovalCard({
               placeholder="Optional note that will be saved in the case history"
               value={note}
               onChange={(e) => setNote(e.target.value)}
-              rows={3}
+              rows={2}
             />
             <FieldDescription>
               Use this if you want to explain why you approved or rejected the

@@ -1,12 +1,5 @@
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { StatusBadge, UrgencyBadge } from "@/components/status-badge";
@@ -20,6 +13,32 @@ import {
   Receipt,
   ScrollText,
 } from "lucide-react";
+
+function Section({
+  icon: Icon,
+  title,
+  description,
+  children,
+}: {
+  icon: React.ComponentType<{ className?: string }>;
+  title: string;
+  description?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="flex flex-col gap-2">
+      <div>
+        <h3 className="flex items-center gap-1.5 text-sm font-medium">
+          <Icon className="size-4 text-muted-foreground" /> {title}
+        </h3>
+        {description && (
+          <p className="text-xs text-muted-foreground">{description}</p>
+        )}
+      </div>
+      <div className="text-sm">{children}</div>
+    </div>
+  );
+}
 
 export function CaseDetail({
   supportCase,
@@ -101,36 +120,28 @@ export function CaseDetail({
           <TabsTrigger value="data">Order &amp; policy data</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="conversation" className="flex flex-col gap-3">
+        <TabsContent value="conversation" className="flex flex-col gap-2">
           {c.messages.map((message) => (
-            <Card key={message.id}>
-              <CardHeader className="pb-2">
-                <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground">
-                  <CardTitle className="text-sm font-medium capitalize">
-                    {message.authorName ?? message.author}
-                  </CardTitle>
-                  <span>{new Date(message.createdAt).toLocaleString()}</span>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm whitespace-pre-wrap">{message.body}</p>
-              </CardContent>
-            </Card>
+            <div key={message.id} className="rounded-lg border p-3 text-sm">
+              <div className="mb-1 flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground">
+                <span className="font-medium text-foreground capitalize">
+                  {message.authorName ?? message.author}
+                </span>
+                <span>{new Date(message.createdAt).toLocaleString()}</span>
+              </div>
+              <p className="whitespace-pre-wrap">{message.body}</p>
+            </div>
           ))}
         </TabsContent>
 
         <TabsContent value="reasoning" className="flex flex-col gap-4">
           {c.triage && (
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="flex items-center gap-2 text-sm">
-                  <ScrollText /> Triage
-                </CardTitle>
-                <CardDescription>
-                  How the agent classified the case before drafting a response.
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="flex flex-col gap-2 text-sm">
+            <Section
+              icon={ScrollText}
+              title="Triage"
+              description="How the agent classified the case before drafting a response."
+            >
+              <div className="flex flex-col gap-2">
                 <div className="flex flex-wrap gap-1.5">
                   <Badge variant="secondary" className="capitalize">
                     {c.triage.intent.replace(/_/g, " ")}
@@ -147,118 +158,108 @@ export function CaseDetail({
                   )}
                 </div>
                 <p className="text-muted-foreground">{c.triage.rationale}</p>
-              </CardContent>
-            </Card>
+              </div>
+            </Section>
           )}
 
           {c.policyMatches && c.policyMatches.length > 0 && (
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="flex items-center gap-2 text-sm">
-                  <Receipt /> Retrieved policy context
-                </CardTitle>
-                <CardDescription>
-                  The passages pulled from the knowledge base to ground the
-                  reply.
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="flex flex-col gap-3 text-sm">
-                {c.policyMatches.map((match, i) => (
-                  <div
-                    key={`${match.source}-${i}`}
-                    className="flex flex-col gap-1 border-b pb-2 last:border-0 last:pb-0"
-                  >
-                    <div className="flex items-center justify-between text-xs text-muted-foreground">
-                      <span className="font-medium text-foreground">
-                        {match.title}
-                      </span>
-                      <span>score {match.score.toFixed(2)}</span>
+            <>
+              <Separator />
+              <Section
+                icon={Receipt}
+                title="Retrieved policy context"
+                description="The passages pulled from the knowledge base to ground the reply."
+              >
+                <div className="flex flex-col gap-3">
+                  {c.policyMatches.map((match, i) => (
+                    <div
+                      key={`${match.source}-${i}`}
+                      className="flex flex-col gap-1 border-b pb-2 last:border-0 last:pb-0"
+                    >
+                      <div className="flex items-center justify-between text-xs text-muted-foreground">
+                        <span className="font-medium text-foreground">
+                          {match.title}
+                        </span>
+                        <span>score {match.score.toFixed(2)}</span>
+                      </div>
+                      <p className="line-clamp-3 text-muted-foreground">
+                        {match.text}
+                      </p>
                     </div>
-                    <p className="line-clamp-3 text-muted-foreground">
-                      {match.text}
-                    </p>
-                  </div>
-                ))}
-              </CardContent>
-            </Card>
+                  ))}
+                </div>
+              </Section>
+            </>
           )}
 
           {c.draft && (
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="flex items-center gap-2 text-sm">
-                  <ArrowUpRight /> Draft resolution
-                </CardTitle>
-                <CardDescription>
-                  The response draft the workflow prepared for the support team.
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="flex flex-col gap-2 text-sm">
-                <div className="flex flex-wrap gap-1.5">
-                  <Badge
-                    variant={c.draft.recommendRefund ? "default" : "outline"}
-                  >
-                    {c.draft.recommendRefund
-                      ? `Recommends refund`
-                      : "No refund recommended"}
-                  </Badge>
-                  {c.draft.requiresEscalation && (
-                    <Badge variant="destructive">Requires escalation</Badge>
+            <>
+              <Separator />
+              <Section
+                icon={ArrowUpRight}
+                title="Draft resolution"
+                description="The response draft the workflow prepared for the support team."
+              >
+                <div className="flex flex-col gap-2">
+                  <div className="flex flex-wrap gap-1.5">
+                    <Badge
+                      variant={c.draft.recommendRefund ? "default" : "outline"}
+                    >
+                      {c.draft.recommendRefund
+                        ? `Recommends refund`
+                        : "No refund recommended"}
+                    </Badge>
+                    {c.draft.requiresEscalation && (
+                      <Badge variant="destructive">Requires escalation</Badge>
+                    )}
+                  </div>
+                  {c.draft.requiresEscalation && c.draft.escalationReason && (
+                    <p className="text-muted-foreground">
+                      {c.draft.escalationReason}
+                    </p>
                   )}
                 </div>
-                {c.draft.requiresEscalation && c.draft.escalationReason && (
-                  <p className="text-muted-foreground">
-                    {c.draft.escalationReason}
-                  </p>
-                )}
-              </CardContent>
-            </Card>
+              </Section>
+            </>
           )}
         </TabsContent>
 
         <TabsContent value="data" className="flex flex-col gap-4">
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="flex items-center gap-2 text-sm">
-                <PackageSearch /> Order
-              </CardTitle>
-              <CardDescription>
-                The order record looked up before deciding on a refund.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="text-sm">
-              {c.orderLookup?.found && c.orderLookup.order ? (
-                <dl className="grid grid-cols-2 gap-x-4 gap-y-1">
-                  <dt className="text-muted-foreground">Order ID</dt>
-                  <dd>{c.orderLookup.order.orderId}</dd>
-                  <dt className="text-muted-foreground">Product</dt>
-                  <dd>{c.orderLookup.order.product}</dd>
-                  <dt className="text-muted-foreground">Amount</dt>
-                  <dd>
-                    {c.orderLookup.order.amount} {c.orderLookup.order.currency}
-                  </dd>
-                  <dt className="text-muted-foreground">Charges</dt>
-                  <dd>{c.orderLookup.order.chargeCount}</dd>
-                  <dt className="text-muted-foreground">Status</dt>
-                  <dd className="capitalize">{c.orderLookup.order.status}</dd>
-                </dl>
-              ) : (
-                <p className="text-muted-foreground">
-                  No order on file for this customer.
-                </p>
-              )}
-            </CardContent>
-          </Card>
+          <Section
+            icon={PackageSearch}
+            title="Order"
+            description="The order record looked up before deciding on a refund."
+          >
+            {c.orderLookup?.found && c.orderLookup.order ? (
+              <dl className="grid grid-cols-2 gap-x-4 gap-y-1">
+                <dt className="text-muted-foreground">Order ID</dt>
+                <dd>{c.orderLookup.order.orderId}</dd>
+                <dt className="text-muted-foreground">Product</dt>
+                <dd>{c.orderLookup.order.product}</dd>
+                <dt className="text-muted-foreground">Amount</dt>
+                <dd>
+                  {c.orderLookup.order.amount} {c.orderLookup.order.currency}
+                </dd>
+                <dt className="text-muted-foreground">Charges</dt>
+                <dd>{c.orderLookup.order.chargeCount}</dd>
+                <dt className="text-muted-foreground">Status</dt>
+                <dd className="capitalize">{c.orderLookup.order.status}</dd>
+              </dl>
+            ) : (
+              <p className="text-muted-foreground">
+                No order on file for this customer.
+              </p>
+            )}
+          </Section>
 
           {c.subscriptionLookup?.found && c.subscriptionLookup.subscription && (
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm">Subscription</CardTitle>
-                <CardDescription>
-                  Current subscription status for this customer.
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="text-sm">
+            <>
+              <Separator />
+              <Section
+                icon={Receipt}
+                title="Subscription"
+                description="Current subscription status for this customer."
+              >
                 <dl className="grid grid-cols-2 gap-x-4 gap-y-1">
                   <dt className="text-muted-foreground">Plan</dt>
                   <dd>{c.subscriptionLookup.subscription.plan}</dd>
@@ -273,32 +274,33 @@ export function CaseDetail({
                     ).toLocaleDateString()}
                   </dd>
                 </dl>
-              </CardContent>
-            </Card>
+              </Section>
+            </>
           )}
 
           {c.refundHistory && c.refundHistory.refunds.length > 0 && (
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm">Prior refunds</CardTitle>
-                <CardDescription>
-                  Earlier refunds issued to the same customer.
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="flex flex-col gap-2 text-sm">
-                {c.refundHistory.refunds.map((r) => (
-                  <div
-                    key={r.refundId}
-                    className="flex justify-between border-b pb-1 last:border-0"
-                  >
-                    <span>{r.reason}</span>
-                    <span className="text-muted-foreground">
-                      {r.amount} {r.currency}
-                    </span>
-                  </div>
-                ))}
-              </CardContent>
-            </Card>
+            <>
+              <Separator />
+              <Section
+                icon={BadgeCheck}
+                title="Prior refunds"
+                description="Earlier refunds issued to the same customer."
+              >
+                <div className="flex flex-col gap-2">
+                  {c.refundHistory.refunds.map((r) => (
+                    <div
+                      key={r.refundId}
+                      className="flex justify-between border-b pb-1 last:border-0"
+                    >
+                      <span>{r.reason}</span>
+                      <span className="text-muted-foreground">
+                        {r.amount} {r.currency}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </Section>
+            </>
           )}
         </TabsContent>
       </Tabs>

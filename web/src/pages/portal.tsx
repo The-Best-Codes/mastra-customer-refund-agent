@@ -210,105 +210,92 @@ export function Portal() {
       </section>
 
       {view === "form" ? (
-        <div className="flex flex-col gap-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Contact support</CardTitle>
-              <CardDescription>
-                Send a message to create a case.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <FieldGroup>
-                <FieldGroup className="grid gap-4 sm:grid-cols-2">
-                  <Field>
-                    <FieldLabel htmlFor="name">Your name</FieldLabel>
-                    <Input
-                      id="name"
-                      value={name}
-                      onChange={(e) => setName(e.target.value)}
-                      placeholder="Alex Kim"
-                    />
-                  </Field>
-                  <Field>
-                    <FieldLabel htmlFor="email">Email</FieldLabel>
-                    <Input id="email" value={CUSTOMER_EMAIL} disabled />
-                    <FieldDescription>
-                      This demo uses one fixed customer account.
-                    </FieldDescription>
-                  </Field>
-                </FieldGroup>
+        <Card>
+          <CardHeader>
+            <CardTitle>Contact support</CardTitle>
+            <CardDescription>Send a message to create a case.</CardDescription>
+          </CardHeader>
+          <CardContent className="flex flex-col gap-4">
+            <FieldGroup>
+              <FieldGroup className="grid gap-4 sm:grid-cols-2">
                 <Field>
-                  <FieldLabel htmlFor="subject">Subject</FieldLabel>
+                  <FieldLabel htmlFor="name">Your name</FieldLabel>
                   <Input
-                    id="subject"
-                    required
-                    value={subject}
-                    onChange={(e) => setSubject(e.target.value)}
-                    placeholder="I was charged twice"
+                    id="name"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    placeholder="Alex Kim"
                   />
                 </Field>
                 <Field>
-                  <FieldLabel htmlFor="body">Message</FieldLabel>
-                  <Textarea
-                    id="body"
-                    required
-                    rows={5}
-                    value={body}
-                    onChange={(e) => setBody(e.target.value)}
-                    placeholder="Tell us what happened"
-                  />
+                  <FieldLabel htmlFor="email">Email</FieldLabel>
+                  <Input id="email" value={CUSTOMER_EMAIL} disabled />
+                  <FieldDescription>
+                    This demo uses one fixed customer account.
+                  </FieldDescription>
                 </Field>
               </FieldGroup>
-            </CardContent>
-            <CardFooter>
-              <Button onClick={handleSubmit} disabled={submitting}>
-                {submitting ? (
-                  <Spinner data-icon="inline-start" />
-                ) : (
-                  <Send data-icon="inline-start" />
-                )}
-                Send message
-              </Button>
-            </CardFooter>
-          </Card>
+              <Field>
+                <FieldLabel htmlFor="subject">Subject</FieldLabel>
+                <Input
+                  id="subject"
+                  required
+                  value={subject}
+                  onChange={(e) => setSubject(e.target.value)}
+                  placeholder="I was charged twice"
+                />
+              </Field>
+              <Field>
+                <FieldLabel htmlFor="body">Message</FieldLabel>
+                <Textarea
+                  id="body"
+                  required
+                  rows={5}
+                  value={body}
+                  onChange={(e) => setBody(e.target.value)}
+                  placeholder="Tell us what happened"
+                />
+              </Field>
+            </FieldGroup>
 
-          {mockEmails.length > 0 && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base">
-                  Or start from a sample message
-                </CardTitle>
-                <CardDescription>
-                  Pick one to fill in the form above - it won't send until you
-                  click "Send message".
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Accordion>
-                  {mockEmails.map((mock) => (
-                    <AccordionItem
-                      key={mock.externalId}
-                      value={mock.externalId}
-                    >
-                      <AccordionTrigger onClick={() => applySample(mock)}>
-                        <span className="flex flex-col gap-0.5">
-                          <span className="font-medium">{mock.subject}</span>
-                          <span className="text-xs font-normal text-muted-foreground">
+            {mockEmails.length > 0 && (
+              <Accordion>
+                <AccordionItem value="templates">
+                  <AccordionTrigger>Or choose a template</AccordionTrigger>
+                  <AccordionContent>
+                    <div className="flex flex-col gap-0.5">
+                      {mockEmails.map((mock) => (
+                        <button
+                          key={mock.externalId}
+                          type="button"
+                          onClick={() => applySample(mock)}
+                          className="flex flex-col gap-0.5 rounded-md px-2 py-1.5 text-left transition-colors hover:bg-muted"
+                        >
+                          <span className="text-sm font-medium">
+                            {mock.subject}
+                          </span>
+                          <span className="text-xs text-muted-foreground">
                             {mock.fromName ?? mock.from}
                           </span>
-                        </span>
-                      </AccordionTrigger>
-                      <AccordionContent>
-                        <p className="text-muted-foreground">{mock.body}</p>
-                      </AccordionContent>
-                    </AccordionItem>
-                  ))}
-                </Accordion>
-              </CardContent>
-            </Card>
-          )}
-        </div>
+                        </button>
+                      ))}
+                    </div>
+                  </AccordionContent>
+                </AccordionItem>
+              </Accordion>
+            )}
+          </CardContent>
+          <CardFooter>
+            <Button onClick={handleSubmit} disabled={submitting}>
+              {submitting ? (
+                <Spinner data-icon="inline-start" />
+              ) : (
+                <Send data-icon="inline-start" />
+              )}
+              Send message
+            </Button>
+          </CardFooter>
+        </Card>
       ) : (
         <Card>
           <CardHeader className="flex flex-row items-start justify-between gap-4">
@@ -359,8 +346,8 @@ export function Portal() {
         </Card>
       )}
 
-      <Dialog open={nextStepsOpen} onOpenChange={setNextStepsOpen}>
-        <DialogContent>
+      <Dialog open={nextStepsOpen} onOpenChange={() => {}}>
+        <DialogContent showCloseButton={false}>
           <DialogHeader>
             <DialogTitle>Your message is on its way</DialogTitle>
             <DialogDescription>
@@ -374,12 +361,13 @@ export function Portal() {
             Curious what that looks like from the other side? Open the admin
             dashboard to watch this case get handled.
           </p>
-          <DialogFooter showCloseButton>
+          <DialogFooter>
             <a
               href={lastCaseId ? `/admin/${lastCaseId}` : "/admin"}
               target="_blank"
               rel="noreferrer"
               className={buttonVariants()}
+              onClick={() => setNextStepsOpen(false)}
             >
               Open admin dashboard
               <ArrowUpRight data-icon="inline-end" />

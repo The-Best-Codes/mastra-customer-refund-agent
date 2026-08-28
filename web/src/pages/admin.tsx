@@ -15,12 +15,7 @@ import {
   EmptyTitle,
   EmptyDescription,
 } from "@/components/ui/empty";
-import {
-  Field,
-  FieldDescription,
-  FieldGroup,
-  FieldLabel,
-} from "@/components/ui/field";
+import { Field, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -155,158 +150,146 @@ export function Admin() {
             for a decision.
           </p>
         </div>
+        <div className="flex flex-wrap items-end gap-2">
+          <Field className="w-44">
+            <FieldLabel htmlFor="approver" className="text-xs">
+              Acting approver
+            </FieldLabel>
+            <Input
+              id="approver"
+              value={approverId}
+              onChange={(e) => setApproverId(e.target.value)}
+              className="h-8"
+            />
+          </Field>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleReindex}
+            disabled={reindexing}
+          >
+            {reindexing ? (
+              <Spinner data-icon="inline-start" />
+            ) : (
+              <RefreshCcw data-icon="inline-start" />
+            )}
+            Reindex knowledge
+          </Button>
+        </div>
       </section>
 
-      <section className="grid gap-6 xl:grid-cols-[320px_1fr]">
+      <section className="flex flex-col gap-6">
         <Card>
-          <CardHeader>
-            <CardTitle>Admin controls</CardTitle>
-            <CardDescription>Choose the approver.</CardDescription>
-          </CardHeader>
-          <CardContent className="flex flex-col gap-5">
-            <FieldGroup>
-              <Field>
-                <FieldLabel htmlFor="approver">Acting approver</FieldLabel>
-                <Input
-                  id="approver"
-                  value={approverId}
-                  onChange={(e) => setApproverId(e.target.value)}
-                />
-                <FieldDescription>
-                  This identifier is saved with approval and rejection
-                  decisions.
-                </FieldDescription>
-              </Field>
-            </FieldGroup>
-            <Separator />
-            <Button
-              variant="outline"
-              onClick={handleReindex}
-              disabled={reindexing}
+          <CardHeader className="flex flex-col gap-4">
+            <div className="flex flex-col gap-1">
+              <CardTitle>Case queue</CardTitle>
+              <CardDescription>
+                Filter the list and open a case.
+              </CardDescription>
+            </div>
+            <Tabs
+              value={filter}
+              onValueChange={(v) => setFilter(v as typeof filter)}
             >
-              {reindexing ? (
-                <Spinner data-icon="inline-start" />
-              ) : (
-                <RefreshCcw data-icon="inline-start" />
-              )}
-              Reindex knowledge
-            </Button>
+              <TabsList className="h-auto flex-wrap">
+                {FILTERS.map((f) => (
+                  <TabsTrigger
+                    key={f.value}
+                    value={f.value}
+                    className="text-xs"
+                  >
+                    {f.label}
+                  </TabsTrigger>
+                ))}
+              </TabsList>
+            </Tabs>
+          </CardHeader>
+          <CardContent>
+            {loading && (
+              <div className="flex flex-col gap-3">
+                <Skeleton className="h-12 w-full" />
+                <Skeleton className="h-12 w-full" />
+                <Skeleton className="h-12 w-full" />
+              </div>
+            )}
+            {!loading && filteredCases.length === 0 && (
+              <Empty className="border">
+                <EmptyHeader>
+                  <EmptyTitle>No cases in this view</EmptyTitle>
+                  <EmptyDescription>Try another filter.</EmptyDescription>
+                </EmptyHeader>
+              </Empty>
+            )}
+            {!loading && filteredCases.length > 0 && (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Case</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Customer</TableHead>
+                    <TableHead>Updated</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredCases.map((c) => (
+                    <TableRow
+                      key={c.id}
+                      data-state={c.id === caseId ? "selected" : undefined}
+                    >
+                      <TableCell>
+                        <button
+                          type="button"
+                          className="flex flex-col text-left"
+                          onClick={() => navigate(`/admin/${c.id}`)}
+                        >
+                          <span className="font-medium">{c.subject}</span>
+                          <span className="text-xs text-muted-foreground">
+                            {c.id}
+                          </span>
+                        </button>
+                      </TableCell>
+                      <TableCell>
+                        <StatusBadge status={c.status} />
+                      </TableCell>
+                      <TableCell>
+                        {c.customer.name ?? c.customer.email}
+                      </TableCell>
+                      <TableCell>
+                        {new Date(c.updatedAt).toLocaleString()}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            )}
           </CardContent>
         </Card>
 
-        <div className="flex flex-col gap-6">
-          <Card>
-            <CardHeader className="flex flex-col gap-4">
-              <div className="flex flex-col gap-1">
-                <CardTitle>Case queue</CardTitle>
-                <CardDescription>
-                  Filter the list and open a case.
-                </CardDescription>
-              </div>
-              <Tabs
-                value={filter}
-                onValueChange={(v) => setFilter(v as typeof filter)}
-              >
-                <TabsList className="h-auto flex-wrap">
-                  {FILTERS.map((f) => (
-                    <TabsTrigger
-                      key={f.value}
-                      value={f.value}
-                      className="text-xs"
-                    >
-                      {f.label}
-                    </TabsTrigger>
-                  ))}
-                </TabsList>
-              </Tabs>
-            </CardHeader>
-            <CardContent>
-              {loading && (
-                <div className="flex flex-col gap-3">
-                  <Skeleton className="h-12 w-full" />
-                  <Skeleton className="h-12 w-full" />
-                  <Skeleton className="h-12 w-full" />
-                </div>
-              )}
-              {!loading && filteredCases.length === 0 && (
-                <Empty className="border">
-                  <EmptyHeader>
-                    <EmptyTitle>No cases in this view</EmptyTitle>
-                    <EmptyDescription>Try another filter.</EmptyDescription>
-                  </EmptyHeader>
-                </Empty>
-              )}
-              {!loading && filteredCases.length > 0 && (
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Case</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Customer</TableHead>
-                      <TableHead>Updated</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredCases.map((c) => (
-                      <TableRow
-                        key={c.id}
-                        data-state={c.id === caseId ? "selected" : undefined}
-                      >
-                        <TableCell>
-                          <button
-                            type="button"
-                            className="flex flex-col text-left"
-                            onClick={() => navigate(`/admin/${c.id}`)}
-                          >
-                            <span className="font-medium">{c.subject}</span>
-                            <span className="text-xs text-muted-foreground">
-                              {c.id}
-                            </span>
-                          </button>
-                        </TableCell>
-                        <TableCell>
-                          <StatusBadge status={c.status} />
-                        </TableCell>
-                        <TableCell>
-                          {c.customer.name ?? c.customer.email}
-                        </TableCell>
-                        <TableCell>
-                          {new Date(c.updatedAt).toLocaleString()}
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              )}
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Case detail</CardTitle>
-              <CardDescription>Review the selected case.</CardDescription>
-            </CardHeader>
-            <CardContent>
-              {selectedCase ? (
-                <CaseDetail
-                  supportCase={selectedCase}
-                  approverId={approverId}
-                  onDecision={handleDecision}
-                />
-              ) : (
-                <Empty className="border">
-                  <EmptyHeader>
-                    <EmptyTitle>Select a case</EmptyTitle>
-                    <EmptyDescription>
-                      Choose a case from the queue to see the conversation,
-                      draft, and approval controls.
-                    </EmptyDescription>
-                  </EmptyHeader>
-                </Empty>
-              )}
-            </CardContent>
-          </Card>
-        </div>
+        <Card>
+          <CardHeader>
+            <CardTitle>Case detail</CardTitle>
+            <CardDescription>Review the selected case.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {selectedCase ? (
+              <CaseDetail
+                supportCase={selectedCase}
+                approverId={approverId}
+                onDecision={handleDecision}
+              />
+            ) : (
+              <Empty className="border">
+                <EmptyHeader>
+                  <EmptyTitle>Select a case</EmptyTitle>
+                  <EmptyDescription>
+                    Choose a case from the queue to see the conversation, draft,
+                    and approval controls.
+                  </EmptyDescription>
+                </EmptyHeader>
+              </Empty>
+            )}
+          </CardContent>
+        </Card>
       </section>
 
       <Separator />
