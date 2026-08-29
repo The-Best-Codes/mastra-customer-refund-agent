@@ -10,6 +10,22 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
   Empty,
   EmptyHeader,
   EmptyTitle,
@@ -38,7 +54,7 @@ import {
   reindexKnowledge,
 } from "@/lib/api";
 import type { SupportCase } from "@/lib/types";
-import { RefreshCcw } from "lucide-react";
+import { Ellipsis, RefreshCcw } from "lucide-react";
 import { Spinner } from "@/components/ui/spinner";
 
 const APPROVER_STORAGE_KEY = "support-demo:approver-id";
@@ -62,6 +78,8 @@ export function Admin() {
     () => localStorage.getItem(APPROVER_STORAGE_KEY) ?? "demo-support-lead",
   );
   const [reindexing, setReindexing] = useState(false);
+  const [approverDialogOpen, setApproverDialogOpen] = useState(false);
+  const [approverDraft, setApproverDraft] = useState(approverId);
   const [loading, setLoading] = useState(true);
 
   const refresh = useCallback(async () => {
@@ -150,32 +168,77 @@ export function Admin() {
             for a decision.
           </p>
         </div>
-        <div className="flex flex-wrap items-end gap-2">
-          <Field className="w-44">
-            <FieldLabel htmlFor="approver" className="text-xs">
-              Acting approver
-            </FieldLabel>
-            <Input
-              id="approver"
-              value={approverId}
-              onChange={(e) => setApproverId(e.target.value)}
-              className="h-8"
-            />
-          </Field>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleReindex}
-            disabled={reindexing}
+        <DropdownMenu>
+          <DropdownMenuTrigger
+            render={
+              <Button
+                variant="outline"
+                size="icon"
+                aria-label="More admin actions"
+              />
+            }
           >
-            {reindexing ? (
-              <Spinner data-icon="inline-start" />
-            ) : (
-              <RefreshCcw data-icon="inline-start" />
-            )}
-            Reindex knowledge
-          </Button>
-        </div>
+            <Ellipsis />
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-fit min-w-0">
+            <DropdownMenuGroup>
+              <DropdownMenuItem
+                onClick={() => {
+                  setApproverDraft(approverId);
+                  setApproverDialogOpen(true);
+                }}
+              >
+                Acting approver: {approverId}
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={handleReindex} disabled={reindexing}>
+                {reindexing ? (
+                  <Spinner data-icon="inline-start" />
+                ) : (
+                  <RefreshCcw data-icon="inline-start" />
+                )}
+                Reindex knowledge
+              </DropdownMenuItem>
+            </DropdownMenuGroup>
+          </DropdownMenuContent>
+        </DropdownMenu>
+
+        <Dialog open={approverDialogOpen} onOpenChange={setApproverDialogOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Change acting approver</DialogTitle>
+              <DialogDescription>
+                This name is recorded with the next approval decision.
+              </DialogDescription>
+            </DialogHeader>
+            <Field>
+              <FieldLabel htmlFor="approver">Acting approver</FieldLabel>
+              <Input
+                id="approver"
+                value={approverDraft}
+                onChange={(e) => setApproverDraft(e.target.value)}
+              />
+            </Field>
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => setApproverDialogOpen(false)}
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={() => {
+                  if (approverDraft.trim()) {
+                    setApproverId(approverDraft.trim());
+                    setApproverDialogOpen(false);
+                  }
+                }}
+              >
+                Save approver
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </section>
 
       <section className="flex flex-col gap-6">
@@ -235,12 +298,17 @@ export function Admin() {
                     <TableRow
                       key={c.id}
                       data-state={c.id === caseId ? "selected" : undefined}
+                      className="cursor-pointer"
+                      onClick={() => navigate(`/admin/${c.id}`)}
                     >
                       <TableCell>
                         <button
                           type="button"
                           className="flex flex-col text-left"
-                          onClick={() => navigate(`/admin/${c.id}`)}
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            navigate(`/admin/${c.id}`);
+                          }}
                         >
                           <span className="font-medium">{c.subject}</span>
                           <span className="text-xs text-muted-foreground">
@@ -268,7 +336,10 @@ export function Admin() {
         <Card>
           <CardHeader>
             <CardTitle>Case detail</CardTitle>
-            <CardDescription>Review the selected case.</CardDescription>
+            <CardDescription>
+              Review the selected case, then inspect the run in Mastra Studio
+              when it is running.
+            </CardDescription>
           </CardHeader>
           <CardContent>
             {selectedCase ? (

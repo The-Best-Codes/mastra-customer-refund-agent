@@ -359,9 +359,19 @@ export function Portal() {
           </DialogHeader>
           <p className="text-sm text-muted-foreground">
             Curious what that looks like from the other side? Open the admin
-            dashboard to watch this case get handled.
+            dashboard to watch this case get handled, or open Mastra Studio to
+            inspect the agents, workflows, and traces behind the demo.
           </p>
           <DialogFooter>
+            <a
+              href="http://localhost:4111"
+              target="_blank"
+              rel="noreferrer"
+              className={buttonVariants({ variant: "outline" })}
+            >
+              Open Mastra Studio
+              <ArrowUpRight data-icon="inline-end" />
+            </a>
             <a
               href={lastCaseId ? `/admin/${lastCaseId}` : "/admin"}
               target="_blank"
