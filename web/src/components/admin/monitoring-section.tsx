@@ -1,8 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import {
   Card,
   CardContent,
@@ -21,14 +20,6 @@ import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Spinner } from "@/components/ui/spinner";
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
@@ -36,7 +27,6 @@ import {
 import { getMonitoringSummary } from "@/lib/api";
 import type { MonitoringSummary } from "@/lib/types";
 import {
-  AlertTriangle,
   Info,
   MessageSquareWarning,
   RefreshCcw,
@@ -56,16 +46,6 @@ function formatMinutes(value: number | null): string {
   if (value < 1) return "<1 min";
   if (value < 60) return `${value.toFixed(1)} min`;
   return `${(value / 60).toFixed(1)} hr`;
-}
-
-function formatMs(value: number): string {
-  return value < 1000
-    ? `${Math.round(value)} ms`
-    : `${(value / 1000).toFixed(2)} s`;
-}
-
-function formatUsd(value: number): string {
-  return value < 0.01 && value > 0 ? "<$0.01" : `$${value.toFixed(2)}`;
 }
 
 function RateCard({
@@ -316,152 +296,6 @@ export function MonitoringSection() {
               </CardContent>
             </Card>
           </section>
-
-          <section className="grid gap-4 lg:grid-cols-2">
-            <Card>
-              <CardHeader>
-                <CardTitle>Token cost by agent</CardTitle>
-                <CardDescription>
-                  Derived from {summary.traces.tracesInspected} traced case
-                  {summary.traces.tracesInspected === 1 ? "" : "s"} - no extra
-                  instrumentation required.
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                {summary.traces.byAgent.length === 0 ? (
-                  <p className="text-sm text-muted-foreground">
-                    No model calls traced yet.
-                  </p>
-                ) : (
-                  <>
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead>Agent</TableHead>
-                          <TableHead>Calls</TableHead>
-                          <TableHead>Tokens (in / out)</TableHead>
-                          <TableHead className="text-right">
-                            Est. cost
-                          </TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {summary.traces.byAgent.map((agent) => (
-                          <TableRow key={agent.agent}>
-                            <TableCell className="font-medium">
-                              {agent.agent}
-                            </TableCell>
-                            <TableCell>{agent.calls}</TableCell>
-                            <TableCell>
-                              {agent.inputTokens.toLocaleString()} /{" "}
-                              {agent.outputTokens.toLocaleString()}
-                            </TableCell>
-                            <TableCell className="text-right">
-                              {formatUsd(agent.estimatedCostUsd)}
-                            </TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                    <div className="mt-3 flex items-center justify-between border-t pt-3 text-sm font-medium">
-                      <span>Total (approx.)</span>
-                      <span>{formatUsd(summary.traces.estimatedCostUsd)}</span>
-                    </div>
-                    <p className="mt-1 text-xs text-muted-foreground">
-                      Cost is a rough estimate from public reference pricing,
-                      not your actual bill.
-                    </p>
-                  </>
-                )}
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>Tool performance</CardTitle>
-                <CardDescription>
-                  Latency and error rate per tool, read straight from span data.
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                {summary.traces.tools.length === 0 ? (
-                  <p className="text-sm text-muted-foreground">
-                    No tool calls traced yet.
-                  </p>
-                ) : (
-                  <>
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead>Tool</TableHead>
-                          <TableHead>Calls</TableHead>
-                          <TableHead>Avg / max latency</TableHead>
-                          <TableHead className="text-right">
-                            Error rate
-                          </TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {summary.traces.tools.map((tool) => (
-                          <TableRow key={tool.tool}>
-                            <TableCell className="font-medium">
-                              <div className="flex items-center gap-1.5">
-                                {tool.tool}
-                                {summary.traces.slowestTool?.tool ===
-                                  tool.tool && (
-                                  <Badge variant="secondary" className="gap-1">
-                                    <Timer data-icon="inline-start" /> slowest
-                                  </Badge>
-                                )}
-                                {summary.traces.leastReliableTool?.tool ===
-                                  tool.tool &&
-                                  tool.errors > 0 && (
-                                    <Badge
-                                      variant="destructive"
-                                      className="gap-1"
-                                    >
-                                      <AlertTriangle data-icon="inline-start" />{" "}
-                                      flaky
-                                    </Badge>
-                                  )}
-                              </div>
-                            </TableCell>
-                            <TableCell>{tool.calls}</TableCell>
-                            <TableCell>
-                              {formatMs(tool.avgDurationMs)} /{" "}
-                              {formatMs(tool.maxDurationMs)}
-                            </TableCell>
-                            <TableCell className="text-right">
-                              {formatPercent(tool.errorRate)}
-                            </TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  </>
-                )}
-              </CardContent>
-            </Card>
-          </section>
-
-          {summary.traces.observabilityUnavailable && (
-            <Alert variant="destructive">
-              <AlertTriangle />
-              <AlertTitle>
-                Observability storage doesn't support trace lookups
-              </AlertTitle>
-              <AlertDescription>
-                Token cost and tool stats need a storage provider whose
-                observability domain supports
-                <code className="mx-1 rounded bg-muted px-1">getTrace</code>
-                (LibSQL, Postgres, and Mastra Platform all do). Configure one in
-                <code className="mx-1 rounded bg-muted px-1">
-                  src/mastra/index.ts
-                </code>
-                .
-              </AlertDescription>
-            </Alert>
-          )}
 
           <Card>
             <CardHeader>

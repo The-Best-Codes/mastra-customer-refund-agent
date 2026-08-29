@@ -162,6 +162,13 @@ export const supportCaseSchema = z.object({
   workflowRunId: z.string().optional(),
   /** Root trace id for the resolve-support-case workflow run, used to pull token/tool observability data for monitoring. */
   traceId: z.string().optional(),
+  agentUsage: z
+    .object({
+      inputTokens: z.number(),
+      outputTokens: z.number(),
+      model: z.string().optional(),
+    })
+    .optional(),
   feedback: caseFeedbackSchema.optional(),
   metadata: z.record(z.string(), z.unknown()).default({}),
 });

@@ -185,40 +185,10 @@ export interface FeedbackMetrics {
   }>;
 }
 
-export interface ToolStat {
-  tool: string;
-  calls: number;
-  errors: number;
-  errorRate: number;
-  avgDurationMs: number;
-  maxDurationMs: number;
-}
-
-export interface AgentTokenUsage {
-  agent: string;
-  calls: number;
-  inputTokens: number;
-  outputTokens: number;
-  estimatedCostUsd: number;
-}
-
-export interface TraceMetrics {
-  tracesInspected: number;
-  totalInputTokens: number;
-  totalOutputTokens: number;
-  estimatedCostUsd: number;
-  byAgent: AgentTokenUsage[];
-  tools: ToolStat[];
-  slowestTool: ToolStat | null;
-  leastReliableTool: ToolStat | null;
-  observabilityUnavailable: boolean;
-}
-
 export interface MonitoringSummary {
   generatedAt: string;
   casesConsidered: number;
   funnel: CaseFunnelMetrics;
   refunds: RefundApprovalMetrics;
   feedback: FeedbackMetrics;
-  traces: TraceMetrics;
 }

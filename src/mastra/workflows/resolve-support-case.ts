@@ -45,7 +45,16 @@ const classifyStep = createStep({
       },
     );
 
-    caseStore.update(supportCase.id, { triage: result.object, status: 'processing' });
+    const triageUsage = result.usage;
+    caseStore.update(supportCase.id, {
+      triage: result.object,
+      status: 'processing',
+      agentUsage: {
+        inputTokens: triageUsage.inputTokens ?? 0,
+        outputTokens: triageUsage.outputTokens ?? 0,
+        model: (result as { response?: { modelId?: string } }).response?.modelId,
+      },
+    });
     return { caseId: supportCase.id };
   },
 });
@@ -141,7 +150,16 @@ const draftResponseStep = createStep({
       },
     );
 
-    caseStore.update(supportCase.id, { draft: result.object });
+    const responseUsage = result.usage;
+    const existingUsage = supportCase.agentUsage;
+    caseStore.update(supportCase.id, {
+      draft: result.object,
+      agentUsage: {
+        inputTokens: (existingUsage?.inputTokens ?? 0) + (responseUsage.inputTokens ?? 0),
+        outputTokens: (existingUsage?.outputTokens ?? 0) + (responseUsage.outputTokens ?? 0),
+        model: (result as { response?: { modelId?: string } }).response?.modelId ?? existingUsage?.model,
+      },
+    });
     return { caseId: supportCase.id };
   },
 });
