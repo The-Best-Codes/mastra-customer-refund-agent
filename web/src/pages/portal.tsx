@@ -363,25 +363,32 @@ export function Portal() {
             inspect the agents, workflows, and traces behind the demo.
           </p>
           <DialogFooter>
-            <a
-              href="http://localhost:4111"
-              target="_blank"
-              rel="noreferrer"
-              className={buttonVariants({ variant: "outline" })}
-            >
-              Open Mastra Studio
-              <ArrowUpRight data-icon="inline-end" />
-            </a>
-            <a
-              href={lastCaseId ? `/admin/${lastCaseId}` : "/admin"}
-              target="_blank"
-              rel="noreferrer"
-              className={buttonVariants()}
+            <Button
+              render={
+                <a
+                  href="http://localhost:4111"
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  Mastra Studio
+                  <ArrowUpRight data-icon="inline-end" />
+                </a>
+              }
+              variant="outline"
+            ></Button>
+            <Button
+              render={
+                <a
+                  href={lastCaseId ? `/admin/${lastCaseId}` : "/admin"}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  Admin dashboard
+                  <ArrowUpRight data-icon="inline-end" />
+                </a>
+              }
               onClick={() => setNextStepsOpen(false)}
-            >
-              Open admin dashboard
-              <ArrowUpRight data-icon="inline-end" />
-            </a>
+            ></Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
