@@ -235,11 +235,13 @@ async function computeTraceMetrics(mastra: Mastra, cases: SupportCase[], maxTrac
     inspected += 1;
 
     for (const span of trace.spans) {
-      if (span.spanType === SpanType.MODEL_GENERATION) {
-        const attrs = (span.attributes ?? {}) as { usage?: { inputTokens?: number; outputTokens?: number }; model?: string };
+      if (span.spanType === SpanType.MODEL_GENERATION || span.spanType === SpanType.MODEL_STEP || span.spanType === SpanType.MODEL_INFERENCE) {
+        const attrs = (span.attributes ?? {}) as { usage?: { inputTokens?: number; outputTokens?: number }; model?: string; responseModel?: string };
         const inputTokens = attrs.usage?.inputTokens ?? 0;
         const outputTokens = attrs.usage?.outputTokens ?? 0;
-        const agentName = span.parentEntityName ?? span.entityName ?? 'unknown-agent';
+        const agentName = span.rootEntityName ?? span.parentEntityName ?? span.entityName ?? 'unknown-agent';
+        const model = attrs.model ?? attrs.responseModel;
+        if (inputTokens === 0 && outputTokens === 0) continue;
 
         const bucket = agentUsage.get(agentName) ?? { calls: 0, inputTokens: 0, outputTokens: 0, estimatedCostUsd: 0 };
         bucket.calls += 1;
@@ -250,12 +252,13 @@ async function computeTraceMetrics(mastra: Mastra, cases: SupportCase[], maxTrac
       }
 
       if (span.spanType && TOOL_SPAN_TYPES.has(span.spanType) && span.startedAt && span.endedAt) {
-        const toolName = span.entityName ?? 'unknown-tool';
+        const attrs = (span.attributes ?? {}) as { success?: boolean };
+        const toolName = span.entityName ?? span.name ?? 'unknown-tool';
         const durationMs = new Date(span.endedAt).getTime() - new Date(span.startedAt).getTime();
 
         const bucket = toolUsage.get(toolName) ?? { calls: 0, errors: 0, totalDurationMs: 0, maxDurationMs: 0 };
         bucket.calls += 1;
-        if (span.error) bucket.errors += 1;
+        if (span.error || attrs.success === false) bucket.errors += 1;
         bucket.totalDurationMs += durationMs;
         bucket.maxDurationMs = Math.max(bucket.maxDurationMs, durationMs);
         toolUsage.set(toolName, bucket);
