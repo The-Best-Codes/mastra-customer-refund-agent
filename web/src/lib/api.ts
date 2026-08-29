@@ -18,10 +18,6 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   return body as T;
 }
 
-export function listMockEmails(): Promise<{ emails: MockEmailPayload[] }> {
-  return request("/support/mock-emails");
-}
-
 export function listCases(email?: string): Promise<{ cases: SupportCase[] }> {
   const query = email ? `?email=${encodeURIComponent(email)}` : "";
   return request(`/support/cases${query}`);

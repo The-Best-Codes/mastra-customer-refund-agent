@@ -40,7 +40,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Skeleton } from "@/components/ui/skeleton";
 import { StatusBadge } from "@/components/status-badge";
 import { CaseFeedback } from "@/components/portal/case-feedback";
-import { isCaseActive, listCases, listMockEmails, submitCase } from "@/lib/api";
+import { isCaseActive, listCases, submitCase } from "@/lib/api";
+import { MOCK_INBOUND_EMAILS } from "@/lib/mock-emails";
 import type { MockEmailPayload, SupportCase } from "@/lib/types";
 import { ArrowUpRight, Plus, Send } from "lucide-react";
 import { Spinner } from "@/components/ui/spinner";
@@ -122,7 +123,7 @@ export function Portal() {
   const [subject, setSubject] = useState("");
   const [body, setBody] = useState("");
   const [submitting, setSubmitting] = useState(false);
-  const [mockEmails, setMockEmails] = useState<MockEmailPayload[]>([]);
+  const mockEmails = MOCK_INBOUND_EMAILS;
   const [cases, setCases] = useState<SupportCase[]>([]);
   const [loadingCases, setLoadingCases] = useState(true);
   const [view, setView] = useState<"form" | "cases">("form");
@@ -143,14 +144,6 @@ export function Portal() {
     }
   }, []);
 
-  useEffect(() => {
-    listMockEmails()
-      .then((res) => setMockEmails(res.emails))
-      .catch(() => {});
-  }, []);
-
-  // On first load, jump straight to the case list if there's already
-  // history - only show the submission form when there's nothing to show.
   useEffect(() => {
     (async () => {
       const result = await refreshCases();

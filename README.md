@@ -74,7 +74,6 @@ curl -X POST http://localhost:4111/support/cases/case_xxxxxxxx/approve \
 | Route | Method | Purpose |
 | --- | --- | --- |
 | `/support/inbound` | POST | Ingest a message (mock email shape, see `MockEmailPayload`). Idempotent on `externalId`. |
-| `/support/mock-emails` | GET | Canned example inbound emails for the demo UI. |
 | `/support/cases` | GET | List cases, optionally `?email=` filtered. |
 | `/support/cases/:id` | GET | Full case detail (triage, policy matches, order/subscription lookups, draft, approval, refund result). |
 | `/support/cases/:id/approve` | POST | `{ approverId, note? }`. Approves the pending refund and resumes the workflow. |

@@ -1,6 +1,5 @@
 import { registerApiRoute } from '@mastra/core/server';
 import { caseStore } from '../lib/case-store';
-import { MOCK_INBOUND_EMAILS } from '../integrations/mock-support';
 import { REQUEST_APPROVAL_STEP_ID } from '../workflows/resolve-support-case';
 import { computeMonitoringSummary } from '../lib/monitoring';
 import type { CaseFeedback } from '../domain/support-case';
@@ -44,11 +43,6 @@ export const supportInboundRoute = registerApiRoute('/support/inbound', {
       status: 'processing',
     });
   },
-});
-
-export const supportMockEmailsRoute = registerApiRoute('/support/mock-emails', {
-  method: 'GET',
-  handler: async c => c.json({ emails: MOCK_INBOUND_EMAILS }),
 });
 
 /** GET /support/cases - case inbox for the demo UI, newest first. Optionally filtered by `?email=` for the customer portal. */
@@ -215,7 +209,6 @@ export const supportKnowledgeReindexRoute = registerApiRoute('/support/knowledge
 
 export const supportRoutes = [
   supportInboundRoute,
-  supportMockEmailsRoute,
   supportCasesListRoute,
   supportCaseDetailRoute,
   supportCaseApproveRoute,
