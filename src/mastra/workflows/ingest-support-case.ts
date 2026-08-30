@@ -2,7 +2,7 @@ import { createStep, createWorkflow } from '@mastra/core/workflows';
 import { z } from 'zod';
 import { caseStore } from '../lib/case-store';
 import { generateCaseId } from '../integrations/support-source';
-import { mockSupportAdapter } from '../integrations/mock-support';
+import { getActiveSupportAdapter } from '../integrations/active-adapter';
 import type { SupportCase } from '../domain/support-case';
 
 const normalizeAndPersistStep = createStep({
@@ -11,7 +11,7 @@ const normalizeAndPersistStep = createStep({
   inputSchema: z.object({ payload: z.unknown() }),
   outputSchema: z.object({ caseId: z.string(), isNew: z.boolean() }),
   execute: async ({ inputData }) => {
-    const normalized = await mockSupportAdapter.normalizeInbound(inputData.payload);
+    const normalized = await getActiveSupportAdapter().normalizeInbound(inputData.payload);
 
     const existing = caseStore.findByExternalId(normalized.source, normalized.externalId);
     if (existing) {

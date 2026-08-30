@@ -115,7 +115,7 @@ export interface CaseFeedback {
 export interface SupportCase {
   id: string;
   externalId: string;
-  source: "mock-email" | "zendesk" | "front" | "chat";
+  source: "mock-email" | "zendesk" | "chat";
   customer: { email: string; name?: string };
   subject: string;
   messages: CaseMessage[];

@@ -7,6 +7,7 @@ import { responseAgent, draftResolutionSchema } from '../agents/response-agent';
 import { searchSupportKnowledgeTool } from '../tools/search-support-knowledge';
 import { lookupOrderTool, lookupSubscriptionTool, lookupCustomerRefundHistoryTool } from '../tools/lookup-order';
 import { issueRefundTool, MAX_AUTO_APPROVABLE_REFUND } from '../tools/issue-refund';
+import { getActiveSupportAdapter } from '../integrations/active-adapter';
 
 const caseIdSchema = z.object({ caseId: z.string() });
 
@@ -235,7 +236,7 @@ const resolveCaseStep = createStep({
     caseId: z.string(),
     status: z.enum(['resolved', 'escalated']),
   }),
-  execute: async ({ inputData }) => {
+  execute: async ({ inputData, mastra }) => {
     const supportCase = getCaseOrThrow(inputData.caseId);
     const draft = supportCase.draft!;
     let finalResponse = draft.draftResponse;
@@ -286,6 +287,25 @@ const resolveCaseStep = createStep({
           createdAt: new Date().toISOString(),
         },
       ],
+    });
+
+    // Sync the outcome back to the source system (Zendesk). This is a no-op for the mock
+    // adapter, and best-effort here so a provider hiccup escalates loudly in the logs rather than
+    // failing a resolution that's already been decided.
+    const adapter = getActiveSupportAdapter();
+    const syncBack = async () => {
+      await adapter.sendReply(supportCase.externalId, finalResponse);
+      if (status === 'escalated' && escalationReason) {
+        await adapter.addInternalNote(supportCase.externalId, `Escalated by support-refund-agent: ${escalationReason}`);
+      }
+      await adapter.updateStatus(supportCase.externalId, status);
+    };
+    await syncBack().catch(error => {
+      mastra?.getLogger()?.warn('Failed to sync case resolution back to source system', {
+        error,
+        caseId: supportCase.id,
+        source: supportCase.source,
+      });
     });
 
     return { caseId: supportCase.id, status };

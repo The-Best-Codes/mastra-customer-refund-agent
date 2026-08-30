@@ -85,7 +85,7 @@ export class MockSupportAdapter implements SupportSourceAdapter {
   }
 
   async sendReply(caseId: string, body: string): Promise<void> {
-    // TODO: A real adapter would call the provider's reply API here (Zendesk comment, Front message, outbound email send, ...).
+    // TODO: A real adapter would call the provider's reply API here (Zendesk comment, outbound email send, ...).
     void caseId;
     void body;
   }

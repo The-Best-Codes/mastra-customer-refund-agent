@@ -7,10 +7,9 @@ import type { CaseFeedback } from '../domain/support-case';
 /**
  * POST /support/inbound
  *
- * The single ingestion endpoint for this template. In production you'd point
- * your email/Zendesk/Front webhook here (each provider gets its own adapter
- * behind `SupportSourceAdapter`); for the demo it accepts a mock inbound
- * email payload shaped like `MockEmailPayload`.
+ * The single ingestion endpoint for this template. Point your Zendesk trigger webhook here and
+ * set `SUPPORT_SOURCE` accordingly (see `src/mastra/integrations/`); by default
+ * (`SUPPORT_SOURCE=mock`) it accepts a mock inbound email payload shaped like `MockEmailPayload`.
  */
 export const supportInboundRoute = registerApiRoute('/support/inbound', {
   method: 'POST',

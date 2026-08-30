@@ -23,7 +23,7 @@ export function Landing() {
         <CardContent className="flex flex-col gap-3 text-sm text-muted-foreground">
           <p>
             This is an example of what your customer portal might look like.
-            Don't deploy this to production - use Zendesk, Front, or a similar
+            Don't deploy this to production - use Zendesk or a similar
             integration instead.
           </p>
           <p>

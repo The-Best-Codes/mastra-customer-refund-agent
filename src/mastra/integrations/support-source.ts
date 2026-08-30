@@ -4,7 +4,7 @@ export interface SupportSourceAdapter {
   source: CaseSource;
 
   normalizeInbound(payload: unknown): Promise<Omit<SupportCase, 'id' | 'status' | 'metadata'> & {
-    metadata?: Record<string, unknown>;
+    metadata: Record<string, unknown>;
   }>;
 
   sendReply(caseId: string, body: string): Promise<void>;

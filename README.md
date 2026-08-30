@@ -14,7 +14,7 @@ The moment a support agent can autonomously issue a refund, a hallucinated polic
 - **`resolveSupportCaseWorkflow`**: suspends at the approval step and resumes once a human approves or rejects the recommended refund.
 - **`ingestSupportCaseWorkflow`**: normalizes an inbound message and dedupes by external id, so retried webhooks are safe.
 - **RAG knowledge base**: refund, duplicate-charge, damaged-item, shipping, subscription, and escalation policy docs, chunked and embedded with `@mastra/rag`, queried with `search_support_knowledge`.
-- **Mock commerce + mock inbound email adapter**: no external accounts needed to run the demo. Swap in a real Zendesk/Front/email-webhook adapter behind the same `SupportSourceAdapter` interface when you're ready.
+- **Zendesk adapter, plus a mock inbound-email adapter**: no external accounts needed to run the demo (defaults to mock), but a real `SupportSourceAdapter` implementation for [Zendesk](src/mastra/integrations/zendesk-support.ts) is wired in and ready to flip on with an env var.
 - **One gated transactional tool**: `issue_refund` is capped, idempotent, and only ever called after a human approves.
 - **A demo UI** (`web/`): a customer portal and a support-admin queue. See [`web/README.md`](web/README.md).
 
@@ -95,7 +95,7 @@ All of this lives in `src/mastra/lib/monitoring.ts`, so it's easy to swap in rea
 
 ## Making it yours
 
-- **Connect a real support channel.** Implement `SupportSourceAdapter` (`src/mastra/integrations/support-source.ts`) for Zendesk, Front, or real inbound email, then point its webhook at `POST /support/inbound`. Everything downstream (triage, RAG, order lookups, drafting, approval, refunds) only ever sees a normalized `SupportCase`.
+- **Connect a real support channel.** Set `SUPPORT_SOURCE=zendesk` (see `.env.example`) and fill in Zendesk's credentials - `src/mastra/integrations/active-adapter.ts` picks the right adapter for the whole pipeline. `zendesk-support.ts` implements `SupportSourceAdapter` (`src/mastra/integrations/support-source.ts`) against Zendesk's real REST API: it normalizes an inbound webhook into a `SupportCase`, and posts the agent's reply, an internal escalation note, and the final ticket status back once a case resolves. That file documents the exact webhook payload to configure (a Zendesk trigger's JSON body) and the required env vars. Point that webhook at `POST /support/inbound`; everything downstream (triage, RAG, order lookups, drafting, approval, refunds) only ever sees a normalized `SupportCase`. Add another provider (Front, real inbound email, Intercom, ...) the same way.
 - **Connect a real commerce backend.** `src/mastra/lib/mock-commerce.ts` holds deterministic order/subscription/refund fixtures; replace them with real calls (Shopify, Stripe Billing, an internal orders service). The tool schemas in `src/mastra/tools/` don't need to change.
 - **Persist cases to a real database.** `src/mastra/lib/case-store.ts` is an in-memory store on purpose (keeps the template dependency-free); swap it for a table in the same storage backing Mastra before shipping this anywhere real.
 - **Add evals.** Register `@mastra/evals` scorers against `triageAgent` and `responseAgent` in `src/mastra/index.ts` for groundedness, policy compliance, routing accuracy, tool-call correctness, resolution quality, and multi-turn consistency.
