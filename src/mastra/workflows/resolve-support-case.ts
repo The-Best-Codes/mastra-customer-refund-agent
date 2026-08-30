@@ -289,9 +289,9 @@ const resolveCaseStep = createStep({
       ],
     });
 
-    // Sync the outcome back to the source system (Zendesk). This is a no-op for the mock
-    // adapter, and best-effort here so a provider hiccup escalates loudly in the logs rather than
-    // failing a resolution that's already been decided.
+    // Sync the outcome back to the source system via whichever adapter is active (mock/Zendesk/...).
+    // This is best-effort so a provider hiccup escalates loudly in the logs rather than failing a
+    // resolution that's already been decided.
     const adapter = getActiveSupportAdapter();
     const syncBack = async () => {
       await adapter.sendReply(supportCase.externalId, finalResponse);
