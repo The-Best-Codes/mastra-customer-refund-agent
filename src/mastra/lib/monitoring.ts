@@ -116,7 +116,7 @@ export function computeFeedbackMetrics(cases: SupportCase[]): FeedbackMetrics {
 }
 
 export async function computeMonitoringSummary(_mastra: Mastra): Promise<MonitoringSummary> {
-  const cases = caseStore.list();
+  const cases = await caseStore.list();
   return {
     generatedAt: new Date().toISOString(),
     casesConsidered: cases.length,

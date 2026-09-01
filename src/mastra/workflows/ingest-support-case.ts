@@ -13,7 +13,7 @@ const normalizeAndPersistStep = createStep({
   execute: async ({ inputData }) => {
     const normalized = await getActiveSupportAdapter().normalizeInbound(inputData.payload);
 
-    const existing = caseStore.findByExternalId(normalized.source, normalized.externalId);
+    const existing = await caseStore.findByExternalId(normalized.source, normalized.externalId);
     if (existing) {
       return { caseId: existing.id, isNew: false };
     }
@@ -23,7 +23,7 @@ const normalizeAndPersistStep = createStep({
       status: 'new',
       ...normalized,
     };
-    caseStore.create(supportCase);
+    await caseStore.create(supportCase);
     return { caseId: supportCase.id, isNew: true };
   },
 });
@@ -40,11 +40,11 @@ const startResolutionStep = createStep({
 
     const resolveWorkflow = mastra!.getWorkflow('resolveSupportCaseWorkflow');
     const run = await resolveWorkflow.createRun();
-    caseStore.update(inputData.caseId, { workflowRunId: run.runId });
+    await caseStore.update(inputData.caseId, { workflowRunId: run.runId });
 
-    void run.start({ inputData: { caseId: inputData.caseId } }).catch(error => {
+    void run.start({ inputData: { caseId: inputData.caseId } }).catch(async error => {
       mastra!.getLogger()?.error('resolve-support-case run failed', { error, caseId: inputData.caseId });
-      caseStore.update(inputData.caseId, {
+      await caseStore.update(inputData.caseId, {
         status: 'failed',
         escalationReason: error instanceof Error ? error.message : String(error),
       });

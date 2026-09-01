@@ -11,8 +11,8 @@ import { getActiveSupportAdapter } from '../integrations/active-adapter';
 
 const caseIdSchema = z.object({ caseId: z.string() });
 
-function getCaseOrThrow(caseId: string) {
-  const supportCase = caseStore.get(caseId);
+async function getCaseOrThrow(caseId: string) {
+  const supportCase = await caseStore.get(caseId);
   if (!supportCase) throw new Error(`Support case not found: ${caseId}`);
   return supportCase;
 }
@@ -23,14 +23,14 @@ const classifyStep = createStep({
   inputSchema: caseIdSchema,
   outputSchema: caseIdSchema,
   execute: async ({ inputData, tracingContext }) => {
-    const supportCase = getCaseOrThrow(inputData.caseId);
+    const supportCase = await getCaseOrThrow(inputData.caseId);
     const latestMessage = supportCase.messages[supportCase.messages.length - 1];
 
     // Capture the run's trace id once, up front, so the monitoring dashboard can pull
     // token usage and tool-call stats for this case straight from observability storage.
     const traceId = tracingContext?.currentSpan?.traceId;
     if (traceId) {
-      caseStore.update(supportCase.id, { traceId });
+      await caseStore.update(supportCase.id, { traceId });
     }
 
     const result = await triageAgent.generate(
@@ -47,7 +47,7 @@ const classifyStep = createStep({
     );
 
     const triageUsage = result.usage;
-    caseStore.update(supportCase.id, {
+    await caseStore.update(supportCase.id, {
       triage: result.object,
       status: 'processing',
       agentUsage: {
@@ -66,7 +66,7 @@ const retrievePolicyStep = createStep({
   inputSchema: caseIdSchema,
   outputSchema: caseIdSchema,
   execute: async ({ inputData }) => {
-    const supportCase = getCaseOrThrow(inputData.caseId);
+    const supportCase = await getCaseOrThrow(inputData.caseId);
     const latestMessage = supportCase.messages[supportCase.messages.length - 1];
     const queryText = `${supportCase.triage?.intent ?? ''} ${supportCase.subject} ${latestMessage.body}`.trim();
 
@@ -82,7 +82,7 @@ const retrievePolicyStep = createStep({
       score: source.score ?? 0,
     }));
 
-    caseStore.update(supportCase.id, { policyMatches });
+    await caseStore.update(supportCase.id, { policyMatches });
     return { caseId: supportCase.id };
   },
 });
@@ -93,7 +93,7 @@ const inspectOrderStep = createStep({
   inputSchema: caseIdSchema,
   outputSchema: caseIdSchema,
   execute: async ({ inputData }) => {
-    const supportCase = getCaseOrThrow(inputData.caseId);
+    const supportCase = await getCaseOrThrow(inputData.caseId);
 
     const orderLookup = (await lookupOrderTool.execute!(
       { customerEmail: supportCase.customer.email },
@@ -109,7 +109,7 @@ const inspectOrderStep = createStep({
       ? await lookupCustomerRefundHistoryTool.execute!({ orderId: orderLookup.order!.orderId }, {} as any)
       : { refunds: [] };
 
-    caseStore.update(supportCase.id, {
+    await caseStore.update(supportCase.id, {
       orderLookup: orderLookup as any,
       subscriptionLookup: subscriptionLookup as any,
       refundHistory: refundHistory as any,
@@ -124,7 +124,7 @@ const draftResponseStep = createStep({
   inputSchema: caseIdSchema,
   outputSchema: caseIdSchema,
   execute: async ({ inputData }) => {
-    const supportCase = getCaseOrThrow(inputData.caseId);
+    const supportCase = await getCaseOrThrow(inputData.caseId);
     const latestMessage = supportCase.messages[supportCase.messages.length - 1];
 
     const context = {
@@ -153,7 +153,7 @@ const draftResponseStep = createStep({
 
     const responseUsage = result.usage;
     const existingUsage = supportCase.agentUsage;
-    caseStore.update(supportCase.id, {
+    await caseStore.update(supportCase.id, {
       draft: result.object,
       agentUsage: {
         inputTokens: (existingUsage?.inputTokens ?? 0) + (responseUsage.inputTokens ?? 0),
@@ -192,7 +192,7 @@ const requestApprovalStep = createStep({
   }),
   outputSchema: approvalOutputSchema,
   execute: async ({ inputData, resumeData, suspend }) => {
-    const supportCase = getCaseOrThrow(inputData.caseId);
+    const supportCase = await getCaseOrThrow(inputData.caseId);
     const draft = supportCase.draft;
 
     if (!draft?.recommendRefund) {
@@ -200,7 +200,7 @@ const requestApprovalStep = createStep({
     }
 
     if (!resumeData) {
-      caseStore.update(supportCase.id, { status: 'waiting_approval' });
+      await caseStore.update(supportCase.id, { status: 'waiting_approval' });
       return await suspend({
         caseId: supportCase.id,
         refundAmount: draft.refundAmount ?? 0,
@@ -211,7 +211,7 @@ const requestApprovalStep = createStep({
       });
     }
 
-    caseStore.update(supportCase.id, {
+    await caseStore.update(supportCase.id, {
       approval: {
         approved: resumeData.approved,
         approverId: resumeData.approverId,
@@ -237,7 +237,7 @@ const resolveCaseStep = createStep({
     status: z.enum(['resolved', 'escalated']),
   }),
   execute: async ({ inputData, mastra }) => {
-    const supportCase = getCaseOrThrow(inputData.caseId);
+    const supportCase = await getCaseOrThrow(inputData.caseId);
     const draft = supportCase.draft!;
     let finalResponse = draft.draftResponse;
     let status: 'resolved' | 'escalated' = draft.requiresEscalation ? 'escalated' : 'resolved';
@@ -267,13 +267,13 @@ const resolveCaseStep = createStep({
             },
             {} as any,
           );
-          caseStore.update(supportCase.id, { refundResult: refundResult as any });
+          await caseStore.update(supportCase.id, { refundResult: refundResult as any });
           status = 'resolved';
         }
       }
     }
 
-    caseStore.update(supportCase.id, {
+    await caseStore.update(supportCase.id, {
       status,
       finalResponse,
       escalationReason,

@@ -73,9 +73,10 @@ export const supportCasesListRoute = registerApiRoute('/support/cases', {
   method: 'GET',
   handler: async c => {
     const email = c.req.query('email');
+    const allCases = await caseStore.list();
     const cases = email
-      ? caseStore.list().filter(supportCase => supportCase.customer.email.toLowerCase() === email.toLowerCase())
-      : caseStore.list();
+      ? allCases.filter(supportCase => supportCase.customer.email.toLowerCase() === email.toLowerCase())
+      : allCases;
     return c.json({ cases });
   },
 });
@@ -83,7 +84,7 @@ export const supportCasesListRoute = registerApiRoute('/support/cases', {
 export const supportCaseDetailRoute = registerApiRoute('/support/cases/:caseId', {
   method: 'GET',
   handler: async c => {
-    const supportCase = caseStore.get(c.req.param('caseId'));
+    const supportCase = await caseStore.get(c.req.param('caseId'));
     if (!supportCase) return c.json({ error: 'Case not found.' }, 404);
     return c.json(supportCase);
   },
@@ -91,7 +92,7 @@ export const supportCaseDetailRoute = registerApiRoute('/support/cases/:caseId',
 
 async function resumeApproval(c: any, approved: boolean) {
   const caseId = c.req.param('caseId');
-  const supportCase = caseStore.get(caseId);
+  const supportCase = await caseStore.get(caseId);
   if (!supportCase) return c.json({ error: 'Case not found.' }, 404);
   if (!supportCase.workflowRunId) {
     return c.json({ error: 'This case has no in-flight resolution workflow run.' }, 409);
@@ -125,7 +126,7 @@ async function resumeApproval(c: any, approved: boolean) {
       return c.json({ error: 'Resolution failed after resume.', result }, 500);
     }
 
-    return c.json(caseStore.get(caseId));
+    return c.json(await caseStore.get(caseId));
   } catch (error: any) {
     if (error?.id === 'WORKFLOW_RESUME_ALREADY_CLAIMED') {
       return c.json({ error: 'This approval was already submitted.' }, 409);
@@ -156,7 +157,7 @@ export const supportCaseFeedbackRoute = registerApiRoute('/support/cases/:caseId
   method: 'POST',
   handler: async c => {
     const caseId = c.req.param('caseId');
-    const supportCase = caseStore.get(caseId);
+    const supportCase = await caseStore.get(caseId);
     if (!supportCase) return c.json({ error: 'Case not found.' }, 404);
 
     let body: { rating?: string; comment?: string } = {};
@@ -175,7 +176,7 @@ export const supportCaseFeedbackRoute = registerApiRoute('/support/cases/:caseId
       comment: body.comment,
       submittedAt: new Date().toISOString(),
     };
-    const updated = caseStore.update(caseId, { feedback });
+    const updated = await caseStore.update(caseId, { feedback });
 
     const mastra = c.get('mastra');
     if (supportCase.traceId && mastra.observability.addFeedback) {

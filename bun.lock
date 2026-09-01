@@ -5,6 +5,7 @@
     "": {
       "name": "mastra-customer-refund-agent",
       "dependencies": {
+        "@libsql/client": "^0.17.4",
         "@mastra/core": "latest",
         "@mastra/evals": "latest",
         "@mastra/libsql": "latest",
