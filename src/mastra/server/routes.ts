@@ -3,6 +3,7 @@ import { caseStore } from '../lib/case-store';
 import { REQUEST_APPROVAL_STEP_ID } from '../workflows/resolve-support-case';
 import { computeMonitoringSummary } from '../lib/monitoring';
 import type { CaseFeedback } from '../domain/support-case';
+import { zendeskSupportAdapter, verifyZendeskWebhookSignature } from '../integrations/zendesk-support';
 
 /**
  * POST /support/inbound
@@ -10,13 +11,36 @@ import type { CaseFeedback } from '../domain/support-case';
  * The single ingestion endpoint for this template. Point your Zendesk trigger webhook here and
  * set `SUPPORT_SOURCE` accordingly (see `src/mastra/integrations/`); by default
  * (`SUPPORT_SOURCE=mock`) it accepts a mock inbound email payload shaped like `MockEmailPayload`.
+ *
+ * When `SUPPORT_SOURCE=zendesk`, every request must carry a valid `X-Zendesk-Webhook-Signature` /
+ * `X-Zendesk-Webhook-Signature-Timestamp` pair (see `verifyZendeskWebhookSignature` in
+ * `src/mastra/integrations/zendesk-support.ts`), verified against the raw body read below - this
+ * is why the body is read with `c.req.text()` first instead of `c.req.json()`.
  */
 export const supportInboundRoute = registerApiRoute('/support/inbound', {
   method: 'POST',
   handler: async c => {
+    const rawBody = await c.req.text();
+
+    if ((process.env.SUPPORT_SOURCE?.trim().toLowerCase() || 'mock') === 'zendesk') {
+      let secret: string;
+      try {
+        secret = zendeskSupportAdapter.webhookSecret;
+      } catch (error) {
+        return c.json({ error: error instanceof Error ? error.message : String(error) }, 500);
+      }
+
+      const signature = c.req.header('x-zendesk-webhook-signature');
+      const timestamp = c.req.header('x-zendesk-webhook-signature-timestamp');
+      const valid = verifyZendeskWebhookSignature({ signature, timestamp, rawBody, secret });
+      if (!valid) {
+        return c.json({ error: 'Invalid or missing Zendesk webhook signature.' }, 401);
+      }
+    }
+
     let payload: unknown;
     try {
-      payload = await c.req.json();
+      payload = JSON.parse(rawBody);
     } catch {
       return c.json({ error: 'Invalid JSON body.' }, 400);
     }

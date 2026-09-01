@@ -1,3 +1,4 @@
+import { createHmac, timingSafeEqual } from 'node:crypto';
 import type { CaseMessage, SupportCase } from '../domain/support-case';
 import type { SupportSourceAdapter } from './support-source';
 
@@ -43,6 +44,19 @@ import type { SupportSourceAdapter } from './support-source';
  * - `ZENDESK_SUBDOMAIN` - the `{subdomain}` in `https://{subdomain}.zendesk.com`
  * - `ZENDESK_EMAIL` - the email address of the agent/admin the API token belongs to
  * - `ZENDESK_API_TOKEN` - an API token from Admin Center > Apps and integrations > APIs > Zendesk API
+ * - `ZENDESK_WEBHOOK_SECRET` - the webhook's "Signing Secret" (Admin Center > Apps and
+ *   integrations > Webhooks > select the webhook > "Signing Secret" > "Show"). Required: without
+ *   it, `/support/inbound` would accept unauthenticated POSTs from anyone who finds the URL, which
+ *   is unacceptable for an endpoint that can trigger refunds. See `verifyZendeskWebhookSignature`.
+ *
+ * ## Verifying the webhook is genuinely from Zendesk
+ *
+ * `verifyZendeskWebhookSignature` re-derives the `X-Zendesk-Webhook-Signature` header from the
+ * raw request body and the `X-Zendesk-Webhook-Signature-Timestamp` header, using
+ * `ZENDESK_WEBHOOK_SECRET`, and compares them in constant time - exactly as described in
+ * https://developer.zendesk.com/documentation/webhooks/verifying/. `supportInboundRoute`
+ * (`src/mastra/server/routes.ts`) calls this before handing the payload to `normalizeInbound`, and
+ * rejects the request with 401 if it doesn't match.
  */
 export interface ZendeskWebhookPayload {
   ticket: {
@@ -87,6 +101,31 @@ function toZendeskStatus(status: string): ZendeskTicketStatus {
   }
 }
 
+/**
+ * Verifies the `X-Zendesk-Webhook-Signature` / `X-Zendesk-Webhook-Signature-Timestamp` headers
+ * against the raw request body, per https://developer.zendesk.com/documentation/webhooks/verifying/:
+ * `base64(HMAC-SHA256(secret, timestamp + body))`.
+ *
+ * `rawBody` must be the exact bytes Zendesk sent (before JSON parsing) - re-serializing a parsed
+ * body will not reproduce a matching signature.
+ */
+export function verifyZendeskWebhookSignature(params: {
+  signature: string | undefined | null;
+  timestamp: string | undefined | null;
+  rawBody: string;
+  secret: string;
+}): boolean {
+  const { signature, timestamp, rawBody, secret } = params;
+  if (!signature || !timestamp) return false;
+
+  const expected = createHmac('sha256', secret).update(timestamp + rawBody).digest('base64');
+
+  const expectedBuffer = Buffer.from(expected);
+  const actualBuffer = Buffer.from(signature);
+  if (expectedBuffer.length !== actualBuffer.length) return false;
+  return timingSafeEqual(expectedBuffer, actualBuffer);
+}
+
 export class ZendeskSupportAdapter implements SupportSourceAdapter {
   source = 'zendesk' as const;
 
@@ -103,6 +142,19 @@ export class ZendeskSupportAdapter implements SupportSourceAdapter {
       throw new Error('ZENDESK_EMAIL and ZENDESK_API_TOKEN must both be set to call the Zendesk API.');
     }
     return `Basic ${Buffer.from(`${email}/token:${token}`).toString('base64')}`;
+  }
+
+  /** The webhook signing secret. Required - see the module docs above for why. */
+  get webhookSecret(): string {
+    const value = process.env.ZENDESK_WEBHOOK_SECRET;
+    if (!value) {
+      throw new Error(
+        'ZENDESK_WEBHOOK_SECRET is not set. This is required when SUPPORT_SOURCE=zendesk so /support/inbound ' +
+          'can verify requests actually came from Zendesk. Set it to the webhook\'s Signing Secret (Admin Center ' +
+          '> Apps and integrations > Webhooks > select the webhook > Signing Secret > Show).',
+      );
+    }
+    return value;
   }
 
   private ticketUrl(ticketId: string): string {
