@@ -1,7 +1,9 @@
 import { createHmac, timingSafeEqual } from 'node:crypto';
-import { createClient } from 'node-zendesk';
+import zendesk from 'node-zendesk';
 import type { CaseMessage, SupportCase } from '../domain/support-case';
 import type { SupportSourceAdapter } from './support-source';
+
+const { createClient } = zendesk;
 
 /**
  * Zendesk Support (Ticketing API) adapter.
