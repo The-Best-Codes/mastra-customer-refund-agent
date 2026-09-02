@@ -1,8 +1,15 @@
 import { LibSQLVector } from '@mastra/libsql';
 
+function resolveLibsqlConfig() {
+  return {
+    url: process.env.TURSO_DATABASE_URL || 'file:./mastra.db',
+    authToken: process.env.TURSO_AUTH_TOKEN || undefined,
+  };
+}
+
 export const vectorStore = new LibSQLVector({
   id: 'support-vectors',
-  url: 'file:./mastra.db',
+  ...resolveLibsqlConfig(),
 });
 
 export const KNOWLEDGE_INDEX = 'support_knowledge';
