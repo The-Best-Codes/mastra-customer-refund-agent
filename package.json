@@ -25,6 +25,7 @@
     "@mastra/memory": "latest",
     "@mastra/observability": "latest",
     "@mastra/rag": "latest",
+    "node-zendesk": "^6.0.1",
     "zod": "^4.4.3"
   },
   "devDependencies": {

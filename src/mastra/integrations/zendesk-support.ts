@@ -1,4 +1,5 @@
 import { createHmac, timingSafeEqual } from 'node:crypto';
+import { createClient } from 'node-zendesk';
 import type { CaseMessage, SupportCase } from '../domain/support-case';
 import type { SupportSourceAdapter } from './support-source';
 
@@ -34,16 +35,15 @@ import type { SupportSourceAdapter } from './support-source';
  *
  * ## Outbound calls (reply / internal note / status)
  *
- * All three go through `PUT /api/v2/tickets/{ticket_id}` (see "Update Ticket" in the docs above):
- * a `comment.public: true` update posts a public reply, `comment.public: false` posts an internal
- * note, and `status` transitions the ticket. Auth is HTTP Basic with `{email}/token:{api_token}`
- * base64-encoded, exactly as shown in Zendesk's own code samples.
+ * All three go through the Tickets API via `node-zendesk`. A `comment.public: true` update posts a
+ * public reply, `comment.public: false` posts an internal note, and `status` transitions the ticket.
+ * Auth uses a Zendesk OAuth access token (`Authorization: Bearer ...`) rather than the legacy API
+ * token flow.
  *
  * ## Required environment variables
  *
  * - `ZENDESK_SUBDOMAIN` - the `{subdomain}` in `https://{subdomain}.zendesk.com`
- * - `ZENDESK_EMAIL` - the email address of the agent/admin the API token belongs to
- * - `ZENDESK_API_TOKEN` - an API token from Admin Center > Apps and integrations > APIs > Zendesk API
+ * - `ZENDESK_OAUTH_TOKEN` - a Zendesk OAuth access token with ticket read/write scopes
  * - `ZENDESK_WEBHOOK_SECRET` - the webhook's "Signing Secret" (Admin Center > Apps and
  *   integrations > Webhooks > select the webhook > "Signing Secret" > "Show"). Required: without
  *   it, `/support/inbound` would accept unauthenticated POSTs from anyone who finds the URL, which
@@ -135,13 +135,12 @@ export class ZendeskSupportAdapter implements SupportSourceAdapter {
     return value;
   }
 
-  private get authHeader(): string {
-    const email = process.env.ZENDESK_EMAIL;
-    const token = process.env.ZENDESK_API_TOKEN;
-    if (!email || !token) {
-      throw new Error('ZENDESK_EMAIL and ZENDESK_API_TOKEN must both be set to call the Zendesk API.');
+  private get oauthToken(): string {
+    const token = process.env.ZENDESK_OAUTH_TOKEN;
+    if (!token) {
+      throw new Error('ZENDESK_OAUTH_TOKEN must be set to call the Zendesk API.');
     }
-    return `Basic ${Buffer.from(`${email}/token:${token}`).toString('base64')}`;
+    return token;
   }
 
   /** The webhook signing secret. Required - see the module docs above for why. */
@@ -157,18 +156,24 @@ export class ZendeskSupportAdapter implements SupportSourceAdapter {
     return value;
   }
 
-  private ticketUrl(ticketId: string): string {
-    return `https://${this.subdomain}.zendesk.com/api/v2/tickets/${ticketId}`;
+  private get client() {
+    return createClient({
+      subdomain: this.subdomain,
+      token: this.oauthToken,
+      oauth: true,
+    });
   }
 
   private async updateTicket(ticketId: string, body: Record<string, unknown>): Promise<void> {
-    const response = await fetch(this.ticketUrl(ticketId), {
-      method: 'PUT',
-      headers: { 'content-type': 'application/json', authorization: this.authHeader },
-      body: JSON.stringify({ ticket: body }),
-    });
-    if (!response.ok) {
-      throw new Error(`Zendesk ticket update failed (${response.status}): ${await response.text()}`);
+    const numericTicketId = Number(ticketId);
+    if (!Number.isInteger(numericTicketId)) {
+      throw new Error(`Zendesk ticket id must be numeric. Received: ${ticketId}`);
+    }
+
+    try {
+      await this.client.tickets.update(numericTicketId, body);
+    } catch (error) {
+      throw new Error(`Zendesk ticket update failed: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
 
