@@ -37,13 +37,13 @@ import type { SupportSourceAdapter } from './support-source';
  *
  * All three go through the Tickets API via `node-zendesk`. A `comment.public: true` update posts a
  * public reply, `comment.public: false` posts an internal note, and `status` transitions the ticket.
- * Auth uses a Zendesk OAuth access token (`Authorization: Bearer ...`) rather than the legacy API
- * token flow.
+ * Auth uses a Zendesk OAuth token minted server-side from a confidential OAuth client.
  *
  * ## Required environment variables
  *
  * - `ZENDESK_SUBDOMAIN` - the `{subdomain}` in `https://{subdomain}.zendesk.com`
- * - `ZENDESK_OAUTH_TOKEN` - a Zendesk OAuth access token with ticket read/write scopes
+ * - `ZENDESK_OAUTH_CLIENT_ID` - the OAuth client's Identifier
+ * - `ZENDESK_OAUTH_CLIENT_SECRET` - the OAuth client's Secret
  * - `ZENDESK_WEBHOOK_SECRET` - the webhook's "Signing Secret" (Admin Center > Apps and
  *   integrations > Webhooks > select the webhook > "Signing Secret" > "Show"). Required: without
  *   it, `/support/inbound` would accept unauthenticated POSTs from anyone who finds the URL, which
@@ -128,6 +128,12 @@ export function verifyZendeskWebhookSignature(params: {
 
 export class ZendeskSupportAdapter implements SupportSourceAdapter {
   source = 'zendesk' as const;
+  private oauthTokenCache:
+    | {
+        accessToken: string;
+        expiresAt: number;
+      }
+    | undefined;
 
   private get subdomain(): string {
     const value = process.env.ZENDESK_SUBDOMAIN;
@@ -135,12 +141,58 @@ export class ZendeskSupportAdapter implements SupportSourceAdapter {
     return value;
   }
 
-  private get oauthToken(): string {
-    const token = process.env.ZENDESK_OAUTH_TOKEN;
-    if (!token) {
-      throw new Error('ZENDESK_OAUTH_TOKEN must be set to call the Zendesk API.');
+  private get oauthClientId(): string {
+    const value = process.env.ZENDESK_OAUTH_CLIENT_ID;
+    if (!value) throw new Error('ZENDESK_OAUTH_CLIENT_ID is not set.');
+    return value;
+  }
+
+  private get oauthClientSecret(): string {
+    const value = process.env.ZENDESK_OAUTH_CLIENT_SECRET;
+    if (!value) throw new Error('ZENDESK_OAUTH_CLIENT_SECRET is not set.');
+    return value;
+  }
+
+  private get oauthScope(): string {
+    return process.env.ZENDESK_OAUTH_SCOPE?.trim() || 'tickets:read tickets:write users:read';
+  }
+
+  private async getAccessToken(): Promise<string> {
+    const cached = this.oauthTokenCache;
+    if (cached && cached.expiresAt > Date.now() + 60_000) {
+      return cached.accessToken;
     }
-    return token;
+
+    const response = await fetch(`https://${this.subdomain}.zendesk.com/oauth/tokens`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        grant_type: 'client_credentials',
+        client_id: this.oauthClientId,
+        client_secret: this.oauthClientSecret,
+        scope: this.oauthScope,
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`Zendesk OAuth token request failed (${response.status}): ${await response.text()}`);
+    }
+
+    const tokenPayload = (await response.json()) as {
+      access_token?: string;
+      expires_in?: number;
+    };
+
+    if (!tokenPayload.access_token) {
+      throw new Error('Zendesk OAuth token response did not include access_token.');
+    }
+
+    this.oauthTokenCache = {
+      accessToken: tokenPayload.access_token,
+      expiresAt: Date.now() + (tokenPayload.expires_in ?? 1800) * 1000,
+    };
+
+    return tokenPayload.access_token;
   }
 
   /** The webhook signing secret. Required - see the module docs above for why. */
@@ -156,10 +208,10 @@ export class ZendeskSupportAdapter implements SupportSourceAdapter {
     return value;
   }
 
-  private get client() {
+  private async getClient() {
     return createClient({
       subdomain: this.subdomain,
-      token: this.oauthToken,
+      token: await this.getAccessToken(),
       oauth: true,
     });
   }
@@ -171,7 +223,8 @@ export class ZendeskSupportAdapter implements SupportSourceAdapter {
     }
 
     try {
-      await this.client.tickets.update(numericTicketId, body);
+      const client = await this.getClient();
+      await client.tickets.update(numericTicketId, body);
     } catch (error) {
       throw new Error(`Zendesk ticket update failed: ${error instanceof Error ? error.message : String(error)}`);
     }
