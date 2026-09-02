@@ -137,6 +137,10 @@ export class ZendeskSupportAdapter implements SupportSourceAdapter {
       }
     | undefined;
 
+  private resolveTicketId(caseId: string): string {
+    return String(caseId).replace(/^zd:/, '');
+  }
+
   private get subdomain(): string {
     const value = process.env.ZENDESK_SUBDOMAIN;
     if (!value) throw new Error('ZENDESK_SUBDOMAIN is not set.');
@@ -219,7 +223,8 @@ export class ZendeskSupportAdapter implements SupportSourceAdapter {
   }
 
   private async updateTicket(ticketId: string, body: Record<string, unknown>): Promise<void> {
-    const numericTicketId = Number(ticketId);
+    const resolvedTicketId = this.resolveTicketId(ticketId);
+    const numericTicketId = Number(resolvedTicketId);
     if (!Number.isInteger(numericTicketId)) {
       throw new Error(`Zendesk ticket id must be numeric. Received: ${ticketId}`);
     }
@@ -256,7 +261,7 @@ export class ZendeskSupportAdapter implements SupportSourceAdapter {
     } satisfies Omit<SupportCase, 'id' | 'status' | 'metadata'> & { metadata: Record<string, unknown> };
   }
 
-  /** `caseId` here is the Zendesk ticket id (see `metadata.zendeskTicketId` / `externalId`). */
+  /** For Zendesk, outbound sync must target the real ticket id, not Zendesk's optional external_id field. */
   async sendReply(caseId: string, body: string): Promise<void> {
     await this.updateTicket(caseId, { comment: { body, public: true } });
   }

@@ -293,12 +293,16 @@ const resolveCaseStep = createStep({
     // This is best-effort so a provider hiccup escalates loudly in the logs rather than failing a
     // resolution that's already been decided.
     const adapter = getActiveSupportAdapter();
+    const sourceCaseId =
+      supportCase.source === 'zendesk'
+        ? String(supportCase.metadata?.zendeskTicketId ?? supportCase.externalId)
+        : supportCase.externalId;
     const syncBack = async () => {
-      await adapter.sendReply(supportCase.externalId, finalResponse);
+      await adapter.sendReply(sourceCaseId, finalResponse);
       if (status === 'escalated' && escalationReason) {
-        await adapter.addInternalNote(supportCase.externalId, `Escalated by support-refund-agent: ${escalationReason}`);
+        await adapter.addInternalNote(sourceCaseId, `Escalated by support-refund-agent: ${escalationReason}`);
       }
-      await adapter.updateStatus(supportCase.externalId, status);
+      await adapter.updateStatus(sourceCaseId, status);
     };
     await syncBack().catch(error => {
       mastra?.getLogger()?.warn('Failed to sync case resolution back to source system', {
